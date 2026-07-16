@@ -1,0 +1,12 @@
+{
+  "name": "slash-english-coach-online",
+  "version": "4.0.0",
+  "private": true,
+  "description": "AI-enhanced English listening, speaking, reading and writing coach",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "openai": "6.47.0"
+  }
+}
