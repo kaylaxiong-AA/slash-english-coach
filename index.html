@@ -1,1452 +1,582 @@
 <!doctype html>
-<html lang="en" data-visualize-standalone>
+<html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="referrer" content="no-referrer">
-<title>English Coach</title>
-<style>:root {
-  color-scheme: light dark;
-  background-color: transparent !important;
-
-  /* Agent-facing contract; keep in sync with SKILL.md. */
-  --background: var(
-    --main-surface-primary,
-    light-dark(rgb(255 255 255), rgb(24 24 24))
-  );
-  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
-  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
-  --card-foreground: var(--foreground);
-  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
-  --popover-foreground: var(--foreground);
-  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
-  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
-  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
-  --secondary-foreground: var(--foreground);
-  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
-  --muted-foreground: light-dark(
-    rgb(26 28 31 / 49.4%),
-    rgb(255 255 255 / 49.8%)
-  );
-  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
-  --accent-foreground: var(--primary);
-  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
-  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
-  --input: light-dark(
-    rgb(26 28 31 / 11.8%),
-    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
-  );
-  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
-  --font-size-base: 14px;
-
-  /* Internal implementation variables; not part of the agent contract. */
-  --font-sans: -apple-system, system-ui, "Segoe UI", sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
-    monospace;
-  --font-size-normal: max(11px, var(--font-size-base));
-  --font-size-tooltip: calc(var(--font-size-base) - 1px);
-  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
-  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
-  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
-  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
-  --font-weight-normal: 430;
-  --font-weight-medium: 500;
-  --line-height-normal: calc(var(--font-size-normal) * 1.5);
-  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
-  --line-height-small: calc(var(--font-size-small) + 4px);
-  --radius: 10px;
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-2xl: calc(var(--radius) * 1.6);
-  --radius-full: 9999px;
-  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
-  --checkmark-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z'/%3E%3C/svg%3E");
-
-  /* Legacy aliases; not part of the current agent contract. */
-  --viz-bg: transparent;
-  --viz-panel: var(--card);
-  --viz-border: var(--border);
-  --viz-text: var(--foreground);
-  --viz-muted: var(--muted-foreground);
-  --viz-accent: var(--primary);
-  --viz-accent-text: var(--primary-foreground);
-  --viz-accent-bg: var(--accent);
-  --viz-font-size: var(--font-size-base);
-  --viz-warning: var(--destructive);
-  --color-background-primary: var(--background);
-  --color-text-primary: var(--foreground);
-  --color-border-secondary: var(--border);
-}
-
-:root[data-visualize-standalone] {
-  background-color: var(--background) !important;
-}
-
-/* Generic mobile code-block hosts provide light/dark mode but no series palette.
-   AppBlock hosts set all six variables themselves. */
-:root:not([data-app-block-surface]) {
-  --viz-series-1: var(--primary);
-  --viz-series-2: light-dark(#f3883b, #f59a56);
-  --viz-series-3: light-dark(#5dc977, #74d58b);
-  --viz-series-4: light-dark(#eb77b1, #f08fc0);
-  --viz-series-5: light-dark(#9b79ec, #aa91ef);
-  --viz-series-6: light-dark(#3ab9b1, #5acbc2);
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html > body {
-  margin: 0;
-  padding: 5px;
-  color: var(--foreground);
-  background: transparent !important;
-  font-family: var(--font-sans);
-  font-size: var(--font-size-normal);
-  font-weight: var(--font-weight-normal);
-  line-height: var(--line-height-normal);
-}
-
-:root:not([data-app-block-surface]) > body {
-  padding: 12px;
-}
-
-a {
-  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
-  cursor: pointer;
-  font-weight: var(--viz-font-weight-medium);
-  text-decoration: none;
-  text-underline-offset: 2px;
-}
-
-a:is(:hover, :focus-visible) {
-  text-decoration-line: underline;
-  text-decoration-style: dashed;
-  text-decoration-thickness: 0.5px;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p {
-  margin-block: 0;
-}
-
-h1 {
-  font-size: var(--font-size-h1);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.25;
-}
-
-h2 {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.25;
-}
-
-h3,
-h4,
-h5,
-h6 {
-  font-size: var(--font-size-h3);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.3;
-}
-
-b,
-strong,
-th {
-  font-weight: var(--font-weight-medium);
-}
-
-code:not(pre code) {
-  display: inline;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.92em;
-  overflow-wrap: anywhere;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  word-break: break-word;
-}
-
-#widget {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  padding: 0;
-  background: transparent !important;
-}
-
-.card {
-  min-width: 0;
-  padding: 12px;
-  overflow: hidden;
-  overflow-wrap: break-word;
-  border-radius: var(--radius-2xl);
-  color: var(--card-foreground);
-  background: var(--card);
-}
-
-#widget > :not(.card) {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.tooltip {
-  position: fixed;
-  z-index: 50;
-  top: 0;
-  left: 0;
-  width: max-content;
-  max-width: min(
-    20rem,
-    var(--tooltip-available-width, calc(100vw - 10px)),
-    calc(100vw - 10px)
-  );
-  max-height: min(
-    var(--tooltip-available-height, calc(100vh - 10px)),
-    calc(100vh - 10px)
-  );
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  color: var(--popover-foreground);
-  background: var(--popover);
-  box-shadow: none;
-  font-size: var(--font-size-tooltip);
-  line-height: var(--line-height-tooltip);
-  overflow-wrap: break-word;
-  white-space: normal;
-  pointer-events: none;
-  user-select: none;
-}
-
-.viz-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
-  gap: 10px;
-}
-
-.viz-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.viz-stat-value {
-  font-size: var(--font-size-h2);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.25;
-}
-
-.viz-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.viz-badge {
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  color: var(--accent-foreground);
-  background: var(--accent);
-  font-weight: var(--font-weight-medium);
-}
-
-small,
-.text-small,
-.viz-badge {
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-small);
-}
-
-.text-muted {
-  color: var(--muted-foreground);
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.viz-legend,
-.viz-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.viz-controls > .form-label {
-  display: grid;
-  min-width: min(100%, 260px);
-  flex: 1 1 280px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: 2px 12px;
-  margin-bottom: 0;
-}
-
-.viz-controls > .form-label > :is(.form-control, .form-range, .form-select) {
-  grid-column: 1 / -1;
-}
-
-.btn,
-.form-check-input,
-.form-control,
-.form-range,
-.form-select {
-  font: inherit;
-}
-
-.btn {
-  appearance: button;
-  display: inline-flex;
-  min-height: 28px;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin: 0;
-  padding: 0 8px;
-  -webkit-app-region: no-drag;
-  border: 1px solid var(--input);
-  border-radius: var(--radius-lg);
-  color: var(--secondary-foreground);
-  background: var(--secondary);
-  cursor: var(--cursor-interaction, pointer);
-  text-align: center;
-  text-decoration: none;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-font-smoothing: antialiased;
-}
-
-a.btn {
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn:not(:disabled):hover {
-  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
-}
-
-.btn-primary {
-  border-color: transparent;
-  color: var(--primary-foreground);
-  background: var(--foreground);
-  background-clip: padding-box;
-}
-
-.btn-primary:not(:disabled):hover {
-  background: color-mix(in srgb, var(--foreground) 80%, transparent);
-  background-clip: padding-box;
-}
-
-.btn-ghost {
-  border-color: transparent;
-  color: var(--muted-foreground);
-  background: transparent;
-}
-
-.btn-ghost:not(:disabled):hover {
-  color: var(--foreground);
-  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-[data-lucide] {
-  stroke-width: 1.6;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--foreground);
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  min-height: 28px;
-  padding: 0 8px;
-  outline: none;
-  border: 1px solid var(--input);
-  border-radius: var(--radius-lg);
-  color: var(--foreground);
-  background: var(--secondary);
-}
-
-.form-control::placeholder {
-  color: var(--muted-foreground);
-}
-
-textarea.form-control {
-  height: auto;
-  min-height: 72px;
-  padding: 8px 10px;
-  resize: vertical;
-}
-
-.form-control:focus-visible {
-  border-color: var(--ring);
-  box-shadow: inset 0 0 0 1px var(--ring);
-}
-
-.form-control:disabled,
-.form-select:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.form-select {
-  appearance: none;
-  display: block;
-  width: 100%;
-  min-height: 28px;
-  margin: 0;
-  padding: 0 32px 0 8px;
-  outline: none;
-  border: 1px solid var(--input);
-  border-radius: var(--radius-lg);
-  color: var(--foreground);
-  background-color: var(--secondary);
-  background-image:
-    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
-    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
-  background-position:
-    calc(100% - 14px) 50%,
-    calc(100% - 10px) 50%;
-  background-repeat: no-repeat;
-  background-size: 4px 4px;
-  cursor: var(--cursor-interaction, default);
-}
-
-.form-select:not(:disabled):hover {
-  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
-}
-
-.form-select:focus-visible {
-  border-color: var(--ring);
-  box-shadow: inset 0 0 0 1px var(--ring);
-}
-
-.form-check {
-  display: flex;
-  min-height: 20px;
-  align-items: center;
-  gap: 6px;
-}
-
-.form-check-input {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  flex: 0 0 auto;
-  margin: 0;
-  border: 1px solid var(--input);
-  color: var(--primary-foreground);
-  background-color: transparent;
-  cursor: var(--cursor-interaction, default);
-  transition:
-    background-color 150ms,
-    border-color 150ms,
-    box-shadow 150ms;
-}
-
-.form-check:not(.form-switch) .form-check-input[type="checkbox"] {
-  border-color: var(--input);
-  border-radius: var(--radius-sm);
-  background-color: var(--secondary);
-  box-shadow: var(--shadow-sm);
-}
-
-.form-check:not(.form-switch)
-  .form-check-input:not(:disabled):not(:checked):hover {
-  background-color: var(--card);
-}
-
-.form-check:not(.form-switch) .form-check-input[type="checkbox"]:checked {
-  border-color: var(--primary);
-  background-color: var(--primary);
-}
-
-.form-check:not(.form-switch)
-  .form-check-input[type="checkbox"]:checked::before {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--primary-foreground);
-  content: "";
-  mask: var(--checkmark-image) center / 12px 12px no-repeat;
-}
-
-.form-check-input[type="radio"] {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--radius-full);
-}
-
-.form-check-input[type="radio"]:checked {
-  border: 2px solid var(--primary);
-  background:
-    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
-    var(--primary);
-}
-
-.form-check:not(.form-switch) .form-check-input:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
-
-.form-check:not(.form-switch) .form-check-input:disabled {
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
-  cursor: not-allowed;
-}
-
-.form-switch .form-check-input:disabled,
-.form-switch .form-check-input:disabled + .form-check-label {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.form-check-label {
-  color: var(--foreground);
-  cursor: var(--cursor-interaction, default);
-}
-
-.form-switch .form-check-input {
-  position: relative;
-  width: 32px;
-  height: 20px;
-  border: 0;
-  border-radius: var(--radius-full);
-  background: var(--muted);
-  box-shadow: none;
-  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-.form-switch .form-check-input::before {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 16px;
-  height: 16px;
-  box-sizing: border-box;
-  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
-  border-radius: var(--radius-full);
-  background: light-dark(var(--primary-foreground), var(--foreground));
-  box-shadow: var(--shadow-sm);
-  content: "";
-  transform: translate(2px, -50%);
-  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-.form-switch .form-check-input:checked {
-  background: var(--primary);
-}
-
-.form-switch .form-check-input:checked::before {
-  transform: translate(14px, -50%);
-}
-
-.form-switch .form-check-input:focus-visible {
-  box-shadow: 0 0 0 2px var(--ring);
-}
-
-.form-range {
-  appearance: none;
-  display: block;
-  width: 100%;
-  height: 28px;
-  flex: 1;
-  margin: 0;
-  padding: 0;
-  outline: none;
-  border: 0;
-  accent-color: var(--primary);
-  background: linear-gradient(
-      color-mix(in srgb, var(--foreground) 7%, transparent),
-      color-mix(in srgb, var(--foreground) 7%, transparent)
-    )
-    center / 100% 2px no-repeat;
-}
-
-.form-range::-webkit-slider-runnable-track {
-  height: 28px;
-  background: transparent;
-}
-
-.form-range::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  margin-top: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: light-dark(var(--primary-foreground), var(--foreground));
-}
-
-.form-range:focus-visible::-webkit-slider-thumb {
-  border-color: var(--ring);
-  box-shadow: inset 0 0 0 1px var(--ring);
-}
-
-.form-range::-moz-range-track {
-  height: 28px;
-  background: transparent;
-}
-
-.form-range::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: light-dark(var(--primary-foreground), var(--foreground));
-}
-
-.form-range:focus-visible::-moz-range-thumb {
-  border-color: var(--ring);
-  box-shadow: inset 0 0 0 1px var(--ring);
-}
-
-.form-range:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.btn:not(.btn-primary, .viz-tile):is(
-    [aria-pressed="true"],
-    [aria-selected="true"],
-    .is-selected
-  ) {
-  border-color: var(--primary);
-  color: var(--primary-foreground);
-  background: var(--primary);
-}
-
-.btn.viz-tile:is([aria-pressed="true"], [aria-selected="true"], .is-selected) {
-  border-color: var(--primary);
-  box-shadow: inset 0 0 0 1px var(--primary);
-}
-
-.btn:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 2px;
-}
-
-svg {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-#widget > svg {
-  width: 100%;
-}
-
-.text-warning,
-.text-destructive {
-  color: var(--destructive);
-}
-</style>
-</head>
-<body>
-<div id="english-coach-root">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Slash English Coach</title>
   <style>
-    #english-coach-root { color: var(--foreground); }
-    #english-coach-root .ec-shell { display: grid; gap: 16px; }
-    #english-coach-root .ec-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    #english-coach-root .ec-top p { margin: 0; }
-    #english-coach-root .ec-top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    #english-coach-root .ec-progress { height: 8px; border-radius: 999px; overflow: hidden; background: var(--muted); }
-    #english-coach-root .ec-progress > span { display: block; height: 100%; width: 16.66%; background: var(--viz-series-1); transition: width .25s ease; }
-    #english-coach-root .ec-stepper { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
-    #english-coach-root .ec-step { display: grid; gap: 4px; justify-items: center; padding: 8px 4px; border: 0; border-radius: 10px; color: var(--muted-foreground); background: transparent; cursor: pointer; }
-    #english-coach-root .ec-step[aria-current="step"] { color: var(--primary-foreground); background: var(--primary); }
-    #english-coach-root .ec-step span { font-size: 12px; }
-    #english-coach-root .ec-panel { min-height: 380px; }
-    #english-coach-root .ec-panel h2 { margin-top: 0; }
-    #english-coach-root .ec-panel p { max-width: 68ch; }
-    #english-coach-root .ec-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 16px; }
-    #english-coach-root .ec-audio { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 12px; background: var(--muted); border-radius: 12px; }
-    #english-coach-root .ec-sentence { font-size: 1.12em; line-height: 1.7; }
-    #english-coach-root .ec-translation { color: var(--muted-foreground); }
-    #english-coach-root .ec-options { display: grid; gap: 8px; margin-top: 16px; }
-    #english-coach-root .ec-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
-    #english-coach-root .ec-option:has(input:checked) { border-color: var(--primary); background: var(--accent); color: var(--accent-foreground); }
-    #english-coach-root .ec-vocab { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
-    #english-coach-root .ec-feedback { margin-top: 14px; padding: 12px; border-left: 4px solid var(--viz-series-1); background: var(--muted); border-radius: 8px; }
-    #english-coach-root .ec-feedback[data-kind="error"] { border-left-color: var(--destructive); }
-    #english-coach-root .ec-recording { display: inline-flex; align-items: center; gap: 7px; }
-    #english-coach-root .ec-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--destructive); }
-    #english-coach-root .ec-score-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0; }
-    #english-coach-root .ec-score { padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
-    #english-coach-root .ec-score strong { display: block; font-size: 1.35em; margin-top: 4px; }
-    #english-coach-root .ec-ring { width: 112px; height: 112px; border-radius: 50%; display: grid; place-items: center; margin: 8px auto 18px; background: conic-gradient(var(--viz-series-1) var(--score-angle), var(--muted) 0); }
-    #english-coach-root .ec-ring::before { content: ""; width: 82px; height: 82px; border-radius: 50%; background: var(--card); position: absolute; }
-    #english-coach-root .ec-ring strong { position: relative; font-size: 1.5em; }
-    #english-coach-root textarea { min-height: 130px; width: 100%; resize: vertical; }
-    #english-coach-root .ec-hidden { display: none !important; }
-    #english-coach-root .ec-note { color: var(--muted-foreground); font-size: .92em; }
-    #english-coach-root .ec-ai-result ul { margin: 8px 0; padding-left: 20px; }
-    #english-coach-root .ec-ai-result li { margin: 6px 0; }
-    #english-coach-root .ec-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 16px 0; }
-    #english-coach-root .ec-diagnostic { display: grid; gap: 14px; margin: 16px 0; }
-    #english-coach-root .ec-review-list { display: grid; gap: 10px; margin-top: 16px; }
-    #english-coach-root .ec-review-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
-    #english-coach-root .ec-review-item p { margin: 3px 0 0; }
-    #english-coach-root .ec-history { display: flex; gap: 6px; align-items: end; min-height: 88px; padding-top: 12px; }
-    #english-coach-root .ec-history-bar { flex: 1; min-width: 16px; display: grid; align-content: end; gap: 4px; text-align: center; color: var(--muted-foreground); font-size: 11px; }
-    #english-coach-root .ec-history-bar span { display: block; height: var(--bar-height); min-height: 4px; border-radius: 6px 6px 2px 2px; background: var(--viz-series-1); }
-    @media (max-width: 560px) {
-      #english-coach-root .ec-stepper { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      #english-coach-root .ec-score-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      #english-coach-root .ec-form-grid { grid-template-columns: 1fr; }
-      #english-coach-root .ec-panel { min-height: 430px; }
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f7fbff, #151719);
+      --panel: light-dark(#ffffff, #202327);
+      --panel-soft: light-dark(#eef7ff, #26313a);
+      --text: light-dark(#18202a, #f5f7fa);
+      --muted: light-dark(#607083, #a9b3bd);
+      --primary: light-dark(#1f7ae0, #74b7ff);
+      --primary-contrast: light-dark(#ffffff, #102033);
+      --accent: light-dark(#ffb020, #ffd166);
+      --good: light-dark(#188a4b, #5dd58c);
+      --bad: light-dark(#c2410c, #ff9a68);
+      --border: light-dark(#d8e2ec, #37424d);
+      --shadow: 0 10px 30px rgb(18 38 63 / 10%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    @media (prefers-reduced-motion: reduce) {
-      #english-coach-root .ec-progress > span { transition: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { width: min(1180px, calc(100vw - 24px)); margin: 0 auto; padding: 18px 0 28px; }
+    .top { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; margin-bottom: 12px; }
+    .brand { display: flex; gap: 12px; align-items: center; }
+    .logo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--primary); color: var(--primary-contrast); font-weight: 800; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(24px, 3vw, 38px); line-height: 1.12; }
+    h2 { font-size: 24px; margin-bottom: 8px; }
+    h3 { font-size: 18px; margin-bottom: 6px; }
+    .muted { color: var(--muted); }
+    .top-actions, .actions, .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .btn { border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; background: var(--panel); color: var(--text); min-height: 38px; }
+    .btn:hover { border-color: var(--primary); }
+    .btn-primary { background: var(--primary); color: var(--primary-contrast); border-color: var(--primary); font-weight: 700; }
+    .btn-soft { background: var(--panel-soft); }
+    .btn-icon { display: inline-flex; gap: 6px; align-items: center; }
+    .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+    .tab { display: flex; justify-content: center; gap: 8px; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-weight: 700; }
+    .tab[aria-pressed="true"] { border-color: var(--primary); background: var(--primary); color: var(--primary-contrast); }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .badge { border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; background: var(--panel); color: var(--muted); font-size: 13px; }
+    .layout { display: grid; grid-template-columns: 260px 1fr; gap: 14px; align-items: start; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); padding: 16px; }
+    .nav { display: grid; gap: 7px; }
+    .step { display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; width: 100%; text-align: left; border: 1px solid transparent; border-radius: 8px; padding: 10px; background: transparent; color: var(--text); }
+    .step small { display: block; color: var(--muted); font-size: 12px; }
+    .step[aria-current="step"] { background: var(--panel-soft); border-color: var(--primary); }
+    .step-num { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--panel-soft); color: var(--primary); font-weight: 800; }
+    .progress { height: 8px; border-radius: 999px; overflow: hidden; background: var(--panel-soft); margin: 12px 0 0; }
+    .progress span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width .2s ease; }
+    .panel { min-height: 520px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .choice-grid, .reading-levels, .review-list { display: grid; gap: 10px; margin-top: 12px; }
+    label.choice { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+    label.choice:has(input:checked) { border-color: var(--primary); background: var(--panel-soft); }
+    .field { display: grid; gap: 6px; font-weight: 700; }
+    .field span { color: var(--muted); font-weight: 500; font-size: 13px; }
+    .control { width: 100%; min-height: 40px; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; color: var(--text); background: var(--panel); }
+    textarea.control { min-height: 120px; resize: vertical; }
+    .sentence { font-size: 20px; line-height: 1.65; margin: 10px 0; }
+    .translation { color: var(--muted); margin-top: -6px; }
+    .vocab { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .feedback { margin-top: 14px; padding: 12px; border-left: 4px solid var(--primary); background: var(--panel-soft); border-radius: 8px; }
+    .feedback.error { border-left-color: var(--bad); }
+    .stars { color: var(--accent); font-size: 26px; letter-spacing: 2px; }
+    .score-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+    .score { border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+    .score strong { display: block; font-size: 28px; margin-top: 4px; }
+    .history { display: flex; gap: 6px; align-items: end; min-height: 86px; margin-top: 10px; }
+    .bar { flex: 1; min-width: 16px; display: grid; align-content: end; gap: 4px; text-align: center; color: var(--muted); font-size: 11px; }
+    .bar span { display: block; height: var(--h); min-height: 4px; border-radius: 6px 6px 2px 2px; background: var(--primary); }
+    .hidden { display: none !important; }
+    .kid .panel { background: light-dark(#fffef7, #222323); }
+    .kid .sentence { font-size: 24px; }
+    .kid .btn, .kid .tab, .kid .step { min-height: 44px; }
+    @media (max-width: 760px) {
+      .top { grid-template-columns: 1fr; }
+      .layout { grid-template-columns: 1fr; }
+      .grid, .score-grid { grid-template-columns: 1fr; }
+      .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
-
-  <main class="ec-shell" aria-live="polite">
-    <div class="ec-top">
+</head>
+<body>
+  <main id="app" class="app">
+    <header class="top">
       <div>
-        <p class="text-muted" id="ec-day-label">第 1 天 · 商务沟通</p>
-        <strong id="ec-lesson-title">Introduce your AI service</strong>
+        <div class="brand">
+          <div class="logo">/E</div>
+          <div>
+            <h1>Slash English Coach</h1>
+            <p class="muted" id="subtitle">成人英语听说读写训练</p>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge" id="modeBadge">成人模式</span>
+          <span class="badge" id="levelBadge">待测评</span>
+          <span class="badge" id="streakBadge">连续 0 天</span>
+          <span class="badge" id="timeBadge">20 分钟</span>
+          <span class="badge" id="aiBadge">AI 检测中</span>
+        </div>
       </div>
-      <div class="viz-row">
-        <span class="viz-badge" id="ec-level-badge">A2 入门</span>
-        <span class="viz-badge" id="ec-streak-badge">连续 0 天</span>
-        <span class="viz-badge" id="ec-time-badge">20 分钟</span>
-        <span class="viz-badge" id="ec-ai-badge">AI检测中</span>
+      <div class="top-actions">
+        <button class="btn btn-soft" data-action="review">复习 <span id="reviewCount">0</span></button>
+        <button class="btn btn-soft" data-action="material">自定义材料</button>
+        <button class="btn btn-soft" data-action="settings">设置</button>
       </div>
-      <div class="ec-top-actions">
-        <button type="button" class="btn btn-ghost" data-action="open-review"><i data-lucide="bookmark" aria-hidden="true"></i>复习 <span id="ec-review-count">0</span></button>
-        <button type="button" class="btn btn-ghost" data-action="open-material"><i data-lucide="file-plus-2" aria-hidden="true"></i>自定义材料</button>
-        <button type="button" class="btn btn-ghost" data-action="open-settings"><i data-lucide="settings" aria-hidden="true"></i>设置</button>
-      </div>
+    </header>
+
+    <div class="tabs" aria-label="学习模式">
+      <button class="tab" data-action="set-mode" data-mode="kid" aria-pressed="false">儿童模式</button>
+      <button class="tab" data-action="set-mode" data-mode="adult" aria-pressed="true">成人模式</button>
     </div>
 
-    <div class="ec-progress" aria-label="今日训练进度"><span id="ec-progress-bar"></span></div>
-
-    <nav class="ec-stepper" aria-label="训练步骤">
-      <button class="ec-step" data-step="0" aria-current="step"><i data-lucide="headphones" aria-hidden="true"></i><span>听</span></button>
-      <button class="ec-step" data-step="1"><i data-lucide="book-open" aria-hidden="true"></i><span>读</span></button>
-      <button class="ec-step" data-step="2"><i data-lucide="mic" aria-hidden="true"></i><span>跟读</span></button>
-      <button class="ec-step" data-step="3"><i data-lucide="message-circle" aria-hidden="true"></i><span>说</span></button>
-      <button class="ec-step" data-step="4"><i data-lucide="pen-line" aria-hidden="true"></i><span>写</span></button>
-      <button class="ec-step" data-step="5"><i data-lucide="chart-no-axes-column-increasing" aria-hidden="true"></i><span>报告</span></button>
-    </nav>
-
-    <section class="card ec-panel" id="ec-panel"></section>
+    <section class="layout">
+      <aside class="card">
+        <nav class="nav" aria-label="训练流程" id="steps"></nav>
+        <div class="progress" aria-label="今日进度"><span id="progress"></span></div>
+      </aside>
+      <section class="card panel" id="panel" aria-live="polite"></section>
+    </section>
   </main>
-
-  <template id="ec-listen-template">
-    <h2>先听后看</h2>
-    <p class="text-muted">播放两遍，不看原文。然后回答下面的问题。</p>
-    <div class="ec-audio">
-      <button type="button" class="btn btn-primary" data-action="play-all"><i data-lucide="play" aria-hidden="true"></i>播放全文</button>
-      <label class="form-label">语速
-        <select class="form-select" id="ec-rate">
-          <option value="0.72">慢速</option>
-          <option value="0.88" selected>正常</option>
-          <option value="1">快速</option>
-        </select>
-      </label>
-      <span class="text-muted" id="ec-play-count">已播放 0 次</span>
-    </div>
-    <div id="ec-question"></div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="submit-answer">提交答案</button>
-      <span class="text-muted" id="ec-question-count"></span>
-    </div>
-    <div id="ec-listen-feedback"></div>
-  </template>
-
-  <template id="ec-setup-template">
-    <h2>先建立你的英语训练档案</h2>
-    <p class="text-muted">选择目标和每天可投入的时间，然后完成5道题。系统会从适合你的难度开始。</p>
-    <div class="ec-form-grid">
-      <label class="form-label" for="ec-goal">主要目标
-        <select class="form-select" id="ec-goal">
-          <option value="商务沟通">商务沟通</option>
-          <option value="外贸英语">外贸询盘与客户沟通</option>
-          <option value="AI与培训">AI、企业培训与项目汇报</option>
-          <option value="综合提升">综合听说读写</option>
-        </select>
-      </label>
-      <label class="form-label" for="ec-minutes">每天学习时间
-        <select class="form-select" id="ec-minutes">
-          <option value="10">10分钟</option>
-          <option value="20" selected>20分钟</option>
-          <option value="30">30分钟</option>
-        </select>
-      </label>
-    </div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="start-assessment">开始3分钟水平测评</button>
-      <button type="button" class="btn ec-hidden" id="ec-cancel-settings" data-action="cancel-settings">返回今日训练</button>
-    </div>
-    <div class="ec-feedback">
-      <strong>学习数据备份</strong><br>
-      <span class="text-muted">更换电脑或浏览器前，可导出进度文件，再在新设备导入。</span>
-      <div class="ec-actions">
-        <button type="button" class="btn" data-action="export-progress">导出进度</button>
-        <button type="button" class="btn" data-action="choose-import">导入进度</button>
-        <input class="ec-hidden" type="file" accept="application/json,.json" id="ec-import-file">
-      </div>
-    </div>
-    <div id="ec-settings-feedback"></div>
-  </template>
-
-  <template id="ec-assessment-template">
-    <h2>英语水平测评</h2>
-    <p class="text-muted">每题选择最合适的答案。结果只用于安排起始难度，不是正式考试。</p>
-    <div class="ec-diagnostic" id="ec-diagnostic"></div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="submit-assessment">完成测评并开始训练</button>
-      <button type="button" class="btn" data-action="back-setup">返回修改目标</button>
-    </div>
-    <div id="ec-assessment-feedback"></div>
-  </template>
-
-  <template id="ec-review-template">
-    <h2>薄弱点复习</h2>
-    <p class="text-muted">这里自动收集你查看过的重点词和答错题目涉及的词汇。掌握后可以移除。</p>
-    <div class="ec-review-list" id="ec-review-list"></div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="close-review">返回今日训练</button>
-    </div>
-  </template>
-
-  <template id="ec-material-template">
-    <h2>用你自己的英语材料训练</h2>
-    <p class="text-muted">粘贴一段3～8句英文，系统会自动拆句、生成听力填空、跟读、复述和写作训练。</p>
-    <div class="ec-form-grid">
-      <label class="form-label" for="ec-material-topic">材料主题
-        <input class="form-control" id="ec-material-topic" placeholder="例如：AI项目介绍">
-      </label>
-      <label class="form-label" for="ec-material-title">英文标题
-        <input class="form-control" id="ec-material-title" placeholder="例如：My AI Project">
-      </label>
-    </div>
-    <label class="form-label" for="ec-material-text">英文内容</label>
-    <textarea class="form-control" id="ec-material-text" placeholder="Paste 3–8 complete English sentences here..."></textarea>
-    <label class="form-label" for="ec-material-translation">中文参考（可选，每句用句号分开）</label>
-    <textarea class="form-control" id="ec-material-translation" placeholder="可留空"></textarea>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="build-material">生成今日训练</button>
-      <button type="button" class="btn" data-action="close-material">返回</button>
-    </div>
-    <div id="ec-material-feedback"></div>
-  </template>
-
-  <template id="ec-read-template">
-    <h2>精读原文</h2>
-    <div class="ec-audio">
-      <button type="button" class="btn" data-action="play-all"><i data-lucide="volume-2" aria-hidden="true"></i>边听边读</button>
-      <button type="button" class="btn" data-action="toggle-translation">显示中文</button>
-    </div>
-    <div id="ec-transcript"></div>
-    <div class="ec-vocab" id="ec-vocab"></div>
-    <div id="ec-vocab-detail" class="ec-feedback ec-hidden"></div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="next-step">完成精读，开始跟读</button>
-    </div>
-  </template>
-
-  <template id="ec-shadow-template">
-    <h2>逐句跟读</h2>
-    <p class="text-muted">先听示范，再录下你的声音。浏览器会把语音转成文字并给出匹配度。</p>
-    <p class="ec-sentence" id="ec-shadow-sentence"></p>
-    <p class="ec-translation ec-hidden" id="ec-shadow-translation"></p>
-    <div class="ec-actions">
-      <button type="button" class="btn" data-action="play-sentence"><i data-lucide="volume-2" aria-hidden="true"></i>听示范</button>
-      <button type="button" class="btn btn-primary" data-action="record-shadow"><i data-lucide="mic" aria-hidden="true"></i><span>开始跟读</span></button>
-      <span class="text-muted" id="ec-shadow-count"></span>
-    </div>
-    <label class="form-label" for="ec-shadow-text">识别结果（如果浏览器不支持录音识别，可以手动输入）</label>
-    <textarea class="form-control" id="ec-shadow-text" placeholder="Your spoken English will appear here..."></textarea>
-    <div class="ec-actions">
-      <button type="button" class="btn" data-action="score-shadow">检查本句</button>
-      <button type="button" class="btn btn-primary ec-hidden" data-action="next-sentence">下一句</button>
-    </div>
-    <div id="ec-shadow-feedback"></div>
-  </template>
-
-  <template id="ec-speak-template">
-    <h2>60秒口语复述</h2>
-    <p>请不用看原文，用英语回答：<strong id="ec-speak-prompt"></strong></p>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="record-speak"><i data-lucide="mic" aria-hidden="true"></i><span>开始复述</span></button>
-      <span class="text-muted">目标：至少说出 3 个关键信息</span>
-    </div>
-    <label class="form-label" for="ec-speak-text">你的复述</label>
-    <textarea class="form-control" id="ec-speak-text" placeholder="Speak or type your answer in English..."></textarea>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="score-speak">AI教练检查</button>
-      <button type="button" class="btn" data-action="ai-speak"><i data-lucide="sparkles" aria-hidden="true"></i>AI深度点评</button>
-    </div>
-    <div id="ec-speak-feedback"></div>
-    <div id="ec-ai-speak-feedback"></div>
-  </template>
-
-  <template id="ec-write-template">
-    <h2>把今天的英语用出来</h2>
-    <p id="ec-write-prompt"></p>
-    <label class="form-label" for="ec-write-text">英文短文 <span class="text-muted" id="ec-word-count">0 词</span></label>
-    <textarea class="form-control" id="ec-write-text" placeholder="Write 50–100 words in English..."></textarea>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="score-write">检查写作</button>
-      <button type="button" class="btn" data-action="ai-write"><i data-lucide="sparkles" aria-hidden="true"></i>AI深度批改</button>
-    </div>
-    <div id="ec-write-feedback"></div>
-    <div id="ec-ai-write-feedback"></div>
-  </template>
-
-  <template id="ec-report-template">
-    <h2>今日学习报告</h2>
-    <div class="ec-ring" id="ec-total-ring"><strong id="ec-total-score">0</strong></div>
-    <div class="ec-score-grid">
-      <div class="ec-score"><span class="text-muted">听力理解</span><strong id="ec-score-listen">0</strong></div>
-      <div class="ec-score"><span class="text-muted">跟读准确</span><strong id="ec-score-shadow">0</strong></div>
-      <div class="ec-score"><span class="text-muted">口语表达</span><strong id="ec-score-speak">0</strong></div>
-      <div class="ec-score"><span class="text-muted">英文写作</span><strong id="ec-score-write">0</strong></div>
-    </div>
-    <div class="ec-feedback" id="ec-decision"></div>
-    <div class="ec-actions">
-      <button type="button" class="btn btn-primary" data-action="finish-day">保存记录，安排下一课</button>
-      <button type="button" class="btn" data-action="restart-day">重新练习今天</button>
-    </div>
-    <p class="ec-note">成绩只保存在当前浏览器中。语音识别能力取决于浏览器，建议使用最新版 Chrome 或 Edge。</p>
-  </template>
 
   <script>
     (function () {
-      var root = document.getElementById("english-coach-root");
-      if (!root) return;
-
-      var lessons = [
+      var STORAGE_KEY = "slash-english-coach";
+      var root = document.getElementById("app");
+      var panel = document.getElementById("panel");
+      var adultSteps = [
+        ["听", "先听后看"], ["阅读挑战", "理解原文"], ["跟读", "逐句练习"], ["说", "口语复述"], ["写", "英文输出"], ["报告", "学习记录"]
+      ];
+      var kidSteps = [
+        ["测一测", "零基础也可以"], ["阅读挑战", "读一读选一选"], ["跟读", "跟我说"], ["小表达", "说一句"], ["小书写", "写一写"], ["星星报告", "保存奖励"]
+      ];
+      var adultLessons = [
         {
-          topic: "商务沟通", title: "Introduce your AI service", level: "A2 入门",
-          sentences: [
-            "Our team helps companies use AI in their daily work.",
-            "We begin with one real business problem and build a small solution.",
-            "After the first result, we improve the system and train the team."
-          ],
-          translations: ["我们的团队帮助企业在日常工作中使用人工智能。", "我们从一个真实的业务问题开始，并构建一个小型解决方案。", "取得第一个结果后，我们改进系统并培训团队。"],
-          vocab: [
-            ["daily work", "日常工作", "AI can improve our daily work."],
-            ["business problem", "业务问题", "Start with a clear business problem."],
-            ["improve", "改进、提升", "We improve the system every week."],
-            ["train", "培训", "We train the sales team."]
-          ],
-          questions: [
-            ["What does the team help companies use?", ["AI", "New offices", "More cars"], 0],
-            ["What do they begin with?", ["A large platform", "One real business problem", "A long course"], 1],
-            ["What happens after the first result?", ["They stop", "They change companies", "They improve and train"], 2]
-          ],
-          speakPrompt: "How does the team help a company?",
-          keywords: ["AI", "business", "problem", "solution", "train"],
-          writePrompt: "Write 50–100 words to introduce your own AI service to a potential client."
+          mode: "adult", topic: "商务沟通", title: "Introduce your AI service", level: "A2 入门",
+          sentences: ["Our team helps companies use AI in their daily work.", "We begin with one real business problem and build a small solution.", "After the first result, we improve the system and train the team."],
+          translations: ["我们的团队帮助企业在日常工作中使用 AI。", "我们从一个真实业务问题开始，并构建一个小方案。", "得到第一个结果后，我们改进系统并培训团队。"],
+          vocab: [["daily work", "日常工作", "AI can improve our daily work."], ["business problem", "业务问题", "Start with a clear business problem."], ["improve", "改进", "We improve the system every week."], ["train", "培训", "We train the sales team."]],
+          questions: [["What does the team help companies use?", ["AI", "New offices", "More cars"], 0], ["What do they begin with?", ["A real business problem", "A long course", "A new office"], 0], ["What happens after the first result?", ["They improve and train", "They stop", "They change company"], 0]],
+          speakPrompt: "How does the team help a company?", keywords: ["AI", "business", "problem", "solution", "train"],
+          writePrompt: "Write 50-100 words to introduce your own AI service to a potential client."
         },
         {
-          topic: "外贸询盘", title: "Reply to a product inquiry", level: "A2 入门",
-          sentences: [
-            "Thank you for your inquiry about our dry mix mortar.",
-            "Please tell us your required quantity, destination port, and packaging needs.",
-            "We can then recommend the right product and prepare a quotation."
-          ],
-          translations: ["感谢您咨询我们的干混砂浆。", "请告诉我们所需数量、目的港和包装要求。", "然后我们可以推荐合适的产品并准备报价。"],
-          vocab: [["inquiry", "询盘", "We received a new inquiry."], ["required quantity", "所需数量", "Please confirm the required quantity."], ["destination port", "目的港", "Which destination port do you use?"], ["quotation", "报价", "We will send a quotation today."]],
-          questions: [["What product is the inquiry about?", ["Dry mix mortar", "Cars", "Software"], 0], ["Which detail is requested?", ["Employee age", "Destination port", "Office size"], 1], ["What will the supplier prepare?", ["A contract only", "A meeting room", "A quotation"], 2]],
-          speakPrompt: "What information should you ask from an overseas buyer?",
-          keywords: ["inquiry", "quantity", "port", "packaging", "quotation"],
+          mode: "adult", topic: "外贸询盘", title: "Reply to a product inquiry", level: "A2 入门",
+          sentences: ["Thank you for your inquiry about our dry mix mortar.", "Please tell us your required quantity, destination port, and packaging needs.", "We can then recommend the right product and prepare a quotation."],
+          translations: ["感谢您咨询我们的干混砂浆。", "请告诉我们所需数量、目的港和包装需求。", "然后我们可以推荐合适产品并准备报价。"],
+          vocab: [["inquiry", "询盘", "We received a new inquiry."], ["quantity", "数量", "Please confirm the quantity."], ["destination port", "目的港", "Which destination port do you use?"], ["quotation", "报价", "We will send a quotation today."]],
+          questions: [["What product is the inquiry about?", ["Dry mix mortar", "Cars", "Software"], 0], ["Which detail is requested?", ["Destination port", "Employee age", "Office size"], 0], ["What will the supplier prepare?", ["A quotation", "A meeting room", "A uniform"], 0]],
+          speakPrompt: "What information should you ask from an overseas buyer?", keywords: ["inquiry", "quantity", "port", "packaging", "quotation"],
           writePrompt: "Write a short reply to a buyer who asks for your product price."
         },
         {
-          topic: "销售沟通", title: "Discover the client's real need", level: "A2+ 进阶",
-          sentences: [
-            "A good sales conversation begins with questions, not a product presentation.",
-            "Ask the client what is difficult, what result they expect, and when they need it.",
-            "Listen carefully before you recommend the next step."
-          ],
-          translations: ["好的销售对话从提问开始，而不是从产品介绍开始。", "询问客户哪里困难、期望什么结果以及何时需要。", "在建议下一步之前要认真倾听。"],
-          vocab: [["conversation", "对话", "Start a useful conversation."], ["expect", "期望", "What result do you expect?"], ["carefully", "认真地", "Listen carefully."], ["recommend", "推荐、建议", "We recommend a small pilot."]],
-          questions: [["What should start a sales conversation?", ["A discount", "Questions", "A long slide deck"], 1], ["What should you ask about?", ["Expected result", "Weather only", "Favorite color"], 0], ["What should happen before a recommendation?", ["Careful listening", "Immediate payment", "A new logo"], 0]],
-          speakPrompt: "How would you discover a client's real need?",
-          keywords: ["questions", "client", "difficult", "result", "listen"],
+          mode: "adult", topic: "销售沟通", title: "Discover the client's real need", level: "A2+ 进阶",
+          sentences: ["A good sales conversation begins with questions, not a product presentation.", "Ask the client what is difficult, what result they expect, and when they need it.", "Listen carefully before you recommend the next step."],
+          translations: ["好的销售沟通从提问开始，而不是产品介绍。", "询问客户哪里困难、期待什么结果、什么时候需要。", "在推荐下一步之前要认真倾听。"],
+          vocab: [["conversation", "对话", "Start a useful conversation."], ["expect", "期待", "What result do you expect?"], ["carefully", "认真地", "Listen carefully."], ["recommend", "推荐", "We recommend a small pilot."]],
+          questions: [["What should start a sales conversation?", ["Questions", "A discount", "A long slide deck"], 0], ["What should you ask about?", ["Expected result", "Weather only", "Favorite color"], 0], ["What should happen before a recommendation?", ["Careful listening", "Immediate payment", "A new logo"], 0]],
+          speakPrompt: "How would you discover a client's real need?", keywords: ["questions", "client", "difficult", "result", "listen"],
           writePrompt: "Write five useful questions you can ask a new business client."
         },
         {
-          topic: "企业培训", title: "Design a useful AI workshop", level: "A2+ 进阶",
-          sentences: [
-            "An effective AI workshop should connect directly to real employee tasks.",
-            "Participants need to practice with their own documents and data.",
-            "The final goal is a repeatable workflow, not only new knowledge."
-          ],
-          translations: ["有效的AI工作坊应该直接连接员工的真实任务。", "参与者需要使用自己的文档和数据进行练习。", "最终目标是一个可重复的工作流程，而不只是新知识。"],
-          vocab: [["effective", "有效的", "This is an effective workshop."], ["participant", "参与者", "Every participant will practice."], ["repeatable", "可重复的", "Build a repeatable process."], ["workflow", "工作流程", "The workflow saves time."]],
-          questions: [["What should a workshop connect to?", ["Real tasks", "Random games", "Office decoration"], 0], ["What should participants use?", ["Only textbooks", "Their own documents and data", "No materials"], 1], ["What is the final goal?", ["More theory", "A certificate", "A repeatable workflow"], 2]],
-          speakPrompt: "What makes an AI workshop effective?",
-          keywords: ["tasks", "practice", "documents", "data", "workflow"],
-          writePrompt: "Write 50–100 words describing an effective AI training session."
-        },
-        {
-          topic: "项目汇报", title: "Report a small project result", level: "B1 初级",
-          sentences: [
-            "We tested the new workflow with five sales employees for one week.",
-            "The average time needed to prepare a client report fell by thirty percent.",
-            "Next, we will test accuracy and expand the pilot to another team."
-          ],
-          translations: ["我们与五名销售员工一起测试了新流程一周。", "准备客户报告所需的平均时间下降了30%。", "接下来我们将测试准确性，并把试点扩大到另一个团队。"],
-          vocab: [["average", "平均的", "The average time fell."], ["fell by", "下降了", "The cost fell by ten percent."], ["accuracy", "准确性", "We need to test accuracy."], ["expand", "扩大", "We will expand the pilot."]],
-          questions: [["How many employees joined?", ["Three", "Five", "Ten"], 1], ["What fell by thirty percent?", ["Report preparation time", "Sales revenue", "Team size"], 0], ["What will they test next?", ["Office rent", "Accuracy", "A new uniform"], 1]],
-          speakPrompt: "What was tested, what changed, and what happens next?",
-          keywords: ["tested", "employees", "time", "percent", "accuracy", "expand"],
+          mode: "adult", topic: "项目汇报", title: "Report a small project result", level: "B1 初级",
+          sentences: ["We tested the new workflow with five sales employees for one week.", "The average time needed to prepare a client report fell by thirty percent.", "Next, we will test accuracy and expand the pilot to another team."],
+          translations: ["我们和五名销售员工测试了新流程一周。", "准备客户报告的平均时间下降了百分之三十。", "接下来我们会测试准确性，并把试点扩展到另一个团队。"],
+          vocab: [["workflow", "工作流程", "The workflow saves time."], ["average", "平均", "The average time fell."], ["accuracy", "准确性", "We need to test accuracy."], ["expand", "扩大", "We will expand the pilot."]],
+          questions: [["How many employees joined?", ["Five", "Three", "Ten"], 0], ["What fell by thirty percent?", ["Report preparation time", "Sales revenue", "Team size"], 0], ["What will they test next?", ["Accuracy", "Office rent", "A new uniform"], 0]],
+          speakPrompt: "What was tested, what changed, and what happens next?", keywords: ["tested", "employees", "time", "percent", "accuracy", "expand"],
           writePrompt: "Write a short project update with one result and one next step."
-        },
-        {
-          topic: "AI产品", title: "Build a minimum useful product", level: "B1 初级",
-          sentences: [
-            "A minimum useful product should solve one important problem completely.",
-            "It does not need many features, but the main workflow must be reliable.",
-            "Real user feedback tells the team what to improve next."
-          ],
-          translations: ["最小可用产品应该完整解决一个重要问题。", "它不需要很多功能，但核心流程必须可靠。", "真实用户反馈会告诉团队下一步该改进什么。"],
-          vocab: [["minimum", "最小的", "Build a minimum useful product."], ["completely", "完整地", "Solve the problem completely."], ["reliable", "可靠的", "The workflow must be reliable."], ["feedback", "反馈", "User feedback guides the team."]],
-          questions: [["How many problems should the product solve first?", ["One important problem", "Every possible problem", "None"], 0], ["What must be reliable?", ["The office", "The main workflow", "The product name"], 1], ["What guides the next improvement?", ["Real user feedback", "Guessing", "A bigger logo"], 0]],
-          speakPrompt: "What makes a minimum product useful?",
-          keywords: ["problem", "features", "workflow", "reliable", "feedback"],
-          writePrompt: "Describe one simple AI product you want to build and the problem it solves."
-        },
-        {
-          topic: "商务谈判", title: "Propose a low-risk pilot", level: "B1 初级",
-          sentences: [
-            "Instead of changing the whole company at once, we suggest a four-week pilot.",
-            "We will agree on one success metric and review progress every week.",
-            "If the pilot creates measurable value, we can scale the solution gradually."
-          ],
-          translations: ["我们建议进行为期四周的试点，而不是一次改变整个公司。", "我们将商定一个成功指标，并每周回顾进展。", "如果试点创造了可衡量的价值，我们可以逐步扩大解决方案。"],
-          vocab: [["instead of", "而不是", "Start small instead of changing everything."], ["success metric", "成功指标", "Choose one success metric."], ["measurable", "可衡量的", "We need measurable value."], ["gradually", "逐步地", "Scale the solution gradually."]],
-          questions: [["How long is the pilot?", ["One day", "Four weeks", "One year"], 1], ["How often will progress be reviewed?", ["Every week", "Every hour", "Never"], 0], ["When can the solution scale?", ["Before testing", "When it creates measurable value", "Only after five years"], 1]],
-          speakPrompt: "How would you propose a low-risk AI pilot?",
-          keywords: ["pilot", "weeks", "metric", "progress", "value", "scale"],
-          writePrompt: "Write a short proposal for a four-week pilot project."
         }
       ];
-
-      var saved = {};
-      try { saved = JSON.parse(localStorage.getItem("slash-english-coach") || "{}"); } catch (e) { saved = {}; }
+      var kidLevels = [
+        {
+          mode: "kid", kidLevel: 0, topic: "颜色和动物", title: "Level 0: I See a Cat", level: "儿童 Level 0 零基础",
+          sentences: ["cat", "dog", "I see a cat.", "I see a dog."],
+          translations: ["猫", "狗", "我看见一只猫。", "我看见一只狗。"],
+          vocab: [["cat", "猫", "I see a cat."], ["dog", "狗", "I see a dog."], ["see", "看见", "I see a dog."], ["I", "我", "I see a cat."]],
+          questions: [["Which word means 猫?", ["cat", "dog", "sun"], 0], ["I see a ___.", ["cat", "blue", "run"], 0], ["Which sentence says 我看见一只狗?", ["I see a dog.", "I am a dog.", "Dog see I."], 0]],
+          speakPrompt: "Say: I see a cat.", keywords: ["I", "see", "cat"],
+          writePrompt: "Copy and write one sentence: I see a cat."
+        },
+        {
+          mode: "kid", kidLevel: 1, topic: "我的玩具", title: "Level 1: My Red Ball", level: "儿童 Level 1 单词和短句",
+          sentences: ["I have a red ball.", "The ball is small.", "I like my ball."],
+          translations: ["我有一个红球。", "这个球很小。", "我喜欢我的球。"],
+          vocab: [["red", "红色", "I have a red ball."], ["ball", "球", "The ball is small."], ["small", "小的", "The ball is small."], ["like", "喜欢", "I like my ball."]],
+          questions: [["What color is the ball?", ["Red", "Green", "Black"], 0], ["The ball is ___.", ["small", "tall", "cold"], 0], ["Who likes the ball?", ["I", "Dad", "A bird"], 0]],
+          speakPrompt: "Say one sentence about your toy.", keywords: ["I", "have", "like", "ball"],
+          writePrompt: "Write two short sentences about a toy."
+        },
+        {
+          mode: "kid", kidLevel: 2, topic: "公园故事", title: "Level 2: Tom in the Park", level: "儿童 Level 2 简单故事",
+          sentences: ["Tom goes to the park.", "He sees a big tree.", "A little bird sings in the tree.", "Tom smiles and says hello."],
+          translations: ["Tom 去公园。", "他看见一棵大树。", "一只小鸟在树上唱歌。", "Tom 微笑并说你好。"],
+          vocab: [["park", "公园", "Tom goes to the park."], ["tree", "树", "He sees a big tree."], ["bird", "鸟", "A little bird sings."], ["hello", "你好", "Tom says hello."]],
+          questions: [["Where does Tom go?", ["The park", "The shop", "The sea"], 0], ["What is in the tree?", ["A bird", "A ball", "A bag"], 0], ["How does Tom feel?", ["Happy", "Angry", "Sleepy"], 0]],
+          speakPrompt: "Tell the story in two easy sentences.", keywords: ["Tom", "park", "tree", "bird", "hello"],
+          writePrompt: "Write three easy sentences about Tom."
+        },
+        {
+          mode: "kid", kidLevel: 3, topic: "短文阅读", title: "Level 3: A Good Morning", level: "儿童 Level 3 简单短文",
+          sentences: ["Mia gets up at seven.", "She eats bread and drinks milk.", "Then she reads a small book with her mother.", "Mia feels ready for school."],
+          translations: ["Mia 七点起床。", "她吃面包、喝牛奶。", "然后她和妈妈读一本小书。", "Mia 觉得准备好去上学了。"],
+          vocab: [["morning", "早晨", "It is a good morning."], ["bread", "面包", "She eats bread."], ["milk", "牛奶", "She drinks milk."], ["ready", "准备好的", "Mia feels ready."]],
+          questions: [["When does Mia get up?", ["At seven", "At ten", "At one"], 0], ["What does Mia drink?", ["Milk", "Tea", "Juice"], 0], ["Who reads with Mia?", ["Her mother", "Her teacher", "Her friend"], 0]],
+          speakPrompt: "Tell what Mia does in the morning.", keywords: ["Mia", "seven", "bread", "milk", "book", "school"],
+          writePrompt: "Write four simple sentences about your morning."
+        }
+      ];
+      var adultDiagnostic = [
+        ["I ___ AI tools every day.", ["use", "uses", "using"], 0],
+        ["Yesterday, we ___ a new workflow.", ["test", "tested", "testing"], 1],
+        ["Which sentence is polite?", ["Could you please send your quotation?", "Send price now.", "You must send price."], 0],
+        ["The pilot reduced report time by 30%. What happened?", ["Reports took less time.", "Reports became longer.", "The team stopped reporting."], 0],
+        ["Choose the clearest sentence.", ["Real user feedback tells us what to improve next.", "Feedback real users next improve tells us.", "Users feedback next what real improve."], 0]
+      ];
+      var kidDiagnostic = [
+        ["Choose A.", ["A", "B", "C"], 0],
+        ["Which word is 猫?", ["cat", "run", "blue"], 0],
+        ["I see a ___.", ["dog", "yes", "big"], 0],
+        ["Which is a sentence?", ["I like milk.", "milk like", "the"], 0],
+        ["Tom goes to the park. Where does Tom go?", ["Park", "Moon", "Bed"], 0]
+      ];
+      var saved = readSaved();
       var state = {
-        day: Math.max(0, Math.min(lessons.length - 1, Number(saved.day) || 0)),
+        mode: saved.mode || "adult",
+        adultDay: clamp(Number(saved.adultDay) || 0, 0, adultLessons.length - 1),
+        kidLevel: clamp(Number(saved.kidLevel) || 0, 0, kidLevels.length - 1),
         streak: Number(saved.streak) || 0,
+        profile: saved.profile || null,
         step: 0,
+        view: saved.profile ? "lesson" : "setup",
         question: 0,
         correct: 0,
         playCount: 0,
         shadowIndex: 0,
         shadowScores: [],
-        scores: { listen: 0, shadow: 0, speak: 0, write: 0 },
         showTranslation: false,
-        recording: false,
-        profile: saved.profile || null,
-        draftProfile: null,
+        scores: { listen: 0, read: 0, shadow: 0, speak: 0, write: 0 },
         reviewWords: Array.isArray(saved.reviewWords) ? saved.reviewWords : [],
         history: Array.isArray(saved.history) ? saved.history : [],
         customLesson: saved.customLesson || null,
         customActive: Boolean(saved.customActive && saved.customLesson),
-        view: saved.profile ? "lesson" : "setup"
+        draftProfile: null,
+        recording: false
       };
-
-      var diagnosticQuestions = [
-        ["I ___ AI tools every day.", ["use", "uses", "using"], 0],
-        ["Yesterday, we ___ a new sales workflow.", ["test", "tested", "testing"], 1],
-        ["Which sentence is a polite business request?", ["Send price now.", "Could you please send your quotation?", "You must send price."], 1],
-        ["The pilot reduced report time by 30%. What happened?", ["Reports took less time.", "Reports became longer.", "The team stopped reporting."], 0],
-        ["Choose the clearest sentence.", ["Feedback real users next improve tells us.", "Real user feedback tells us what to improve next.", "Users feedback next what real improve."], 1]
-      ];
-
-      function lesson() { return state.customActive && state.customLesson ? state.customLesson : lessons[state.day]; }
-      function template(id) { return root.querySelector(id).content.cloneNode(true); }
-      function words(text) { return (text.toLowerCase().match(/[a-z']+/g) || []); }
+      function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+      function readSaved() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch (_) { return {}; } }
+      function lesson() {
+        if (state.customActive && state.customLesson) return state.customLesson;
+        return state.mode === "kid" ? kidLevels[state.kidLevel] : adultLessons[state.adultDay];
+      }
+      function steps() { return state.mode === "kid" ? kidSteps : adultSteps; }
+      function words(text) { return (String(text).toLowerCase().match(/[a-z']+/g) || []); }
       function unique(list) { return list.filter(function (v, i, a) { return a.indexOf(v) === i; }); }
-      function overlapScore(spoken, target) {
-        var a = unique(words(spoken));
-        var b = unique(words(target));
-        if (!a.length || !b.length) return 0;
-        var hits = b.filter(function (w) { return a.indexOf(w) >= 0; }).length;
-        return Math.min(100, Math.round((hits / b.length) * 100));
-      }
-      function keywordScore(text, keywords) {
-        var lower = text.toLowerCase();
-        var hits = keywords.filter(function (k) { return lower.indexOf(k.toLowerCase()) >= 0; });
-        return { score: Math.round((hits.length / keywords.length) * 100), hits: hits };
-      }
-      function escapeHTML(value) {
-        return String(value == null ? "" : value).replace(/[&<>'"]/g, function (char) {
-          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", "\"": "&quot;" }[char];
-        });
-      }
-      function renderAIResult(targetId, data) {
-        var target = root.querySelector(targetId);
-        if (!target) return;
-        var dimensions = data.dimensions || {};
-        var dimensionText = ["语法 " + (dimensions.grammar || 0), "词汇 " + (dimensions.vocabulary || 0), "清晰度 " + (dimensions.clarity || 0), "自然度 " + (dimensions.naturalness || 0)].join(" · ");
-        var corrections = Array.isArray(data.corrections) ? data.corrections : [];
-        var strengths = Array.isArray(data.strengths) ? data.strengths : [];
-        target.className = "ec-feedback ec-ai-result";
-        target.innerHTML = "<strong>AI综合评分：" + escapeHTML(data.score) + "</strong><br><span class=\"text-muted\">" + escapeHTML(dimensionText) + "</span><p>" + escapeHTML(data.summary) + "</p>" +
-          (strengths.length ? "<strong>做得好的地方</strong><ul>" + strengths.map(function (item) { return "<li>" + escapeHTML(item) + "</li>"; }).join("") + "</ul>" : "") +
-          (corrections.length ? "<strong>需要修改</strong><ul>" + corrections.map(function (item) { return "<li><s>" + escapeHTML(item.original) + "</s><br><strong>" + escapeHTML(item.corrected) + "</strong><br><span class=\"text-muted\">" + escapeHTML(item.explanation_cn) + "</span></li>"; }).join("") + "</ul>" : "") +
-          "<strong>更自然的表达</strong><p>" + escapeHTML(data.improved_answer) + "</p><strong>下一步练习</strong><p>" + escapeHTML(data.next_action) + "</p>";
-      }
-      async function requestAICoach(type, answer, targetId, button) {
-        if (!answer || words(answer).length < 5) {
-          feedback("请先完成英文回答，再使用AI深度点评。", true, targetId);
-          return;
-        }
-        var originalText = button.textContent;
-        button.disabled = true;
-        button.textContent = "AI正在分析…";
-        feedback("正在从语法、词汇、清晰度和自然度四个维度分析。", false, targetId);
-        var code = localStorage.getItem("english-coach-access-code") || "";
-        var payload = {
-          type: type,
-          answer: answer,
-          prompt: type === "speaking" ? lesson().speakPrompt : lesson().writePrompt,
-          reference: lesson().sentences.join(" "),
-          level: state.profile ? state.profile.level : lesson().level,
-          topic: lesson().topic
-        };
-        async function send(accessCode) {
-          return fetch("/api/coach", {
-            method: "POST",
-            headers: { "content-type": "application/json", "x-app-code": accessCode },
-            body: JSON.stringify(payload)
-          });
-        }
-        try {
-          var response = await send(code);
-          if (response.status === 401) {
-            code = window.prompt("请输入在线版访问码") || "";
-            if (code) localStorage.setItem("english-coach-access-code", code);
-            response = await send(code);
-          }
-          var result = await response.json();
-          if (!response.ok) throw new Error(result.error || "AI服务暂时不可用");
-          renderAIResult(targetId, result.feedback);
-          if (type === "speaking") state.scores.speak = Number(result.feedback.score) || state.scores.speak;
-          if (type === "writing") state.scores.write = Number(result.feedback.score) || state.scores.write;
-        } catch (error) {
-          feedback("AI服务未连接或暂时不可用，已保留本地评分。提示：" + escapeHTML(error.message), true, targetId);
-        } finally {
-          button.disabled = false;
-          button.textContent = originalText;
-          refreshIcons();
-        }
-      }
-      async function checkAIHealth() {
-        var badge = root.querySelector("#ec-ai-badge");
-        if (!badge) return;
-        try {
-          var response = await fetch("/api/health");
-          var result = await response.json();
-          badge.textContent = result.aiConfigured ? "AI已连接" : "本地模式";
-        } catch (error) {
-          badge.textContent = "本地模式";
-        }
-      }
+      function escapeHTML(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]; }); }
       function persist() {
-        try {
-          localStorage.setItem("slash-english-coach", JSON.stringify({
-            day: state.day,
-            streak: state.streak,
-            lastFinished: saved.lastFinished || null,
-            profile: state.profile,
-            reviewWords: state.reviewWords,
-            history: state.history,
-            customLesson: state.customLesson,
-            customActive: state.customActive
-          }));
-        } catch (e) {}
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          mode: state.mode, adultDay: state.adultDay, kidLevel: state.kidLevel, streak: state.streak,
+          profile: state.profile, reviewWords: state.reviewWords, history: state.history,
+          customLesson: state.customLesson, customActive: state.customActive
+        }));
+      }
+      function resetTraining() {
+        state.step = 0; state.question = 0; state.correct = 0; state.playCount = 0; state.shadowIndex = 0; state.shadowScores = [];
+        state.showTranslation = false; state.scores = { listen: 0, read: 0, shadow: 0, speak: 0, write: 0 };
+      }
+      function setMode(mode) {
+        state.mode = mode;
+        state.customActive = false;
+        if (!state.profile || state.profile.mode !== mode) state.view = "setup";
+        resetTraining(); persist(); render();
       }
       function addReviewWord(v, reason) {
         if (!v) return;
         var existing = state.reviewWords.find(function (item) { return item.word === v[0]; });
-        if (existing) {
-          existing.reason = reason || existing.reason;
-          existing.seen = (existing.seen || 1) + 1;
-        } else {
-          state.reviewWords.push({ word: v[0], meaning: v[1], example: v[2], reason: reason || "重点词", seen: 1 });
-        }
+        if (existing) existing.seen = (existing.seen || 1) + 1;
+        else state.reviewWords.push({ word: v[0], meaning: v[1], example: v[2], reason: reason, seen: 1 });
         persist();
       }
-      function setHeader() {
-        var specialView = state.view !== "lesson";
-        root.querySelector("#ec-day-label").textContent = specialView ? "个性化英语成长系统" : (state.customActive ? "自定义训练 · " + lesson().topic : "第 " + (state.day + 1) + " 天 · " + lesson().topic);
-        root.querySelector("#ec-lesson-title").textContent = specialView ? (state.view === "review" ? "Review weak points" : state.view === "material" ? "Create a custom lesson" : "Build your learning profile") : lesson().title;
-        root.querySelector("#ec-level-badge").textContent = state.profile ? state.profile.level : "待测评";
-        root.querySelector("#ec-streak-badge").textContent = "连续 " + state.streak + " 天";
-        root.querySelector("#ec-time-badge").textContent = (state.profile ? state.profile.minutes : 20) + " 分钟";
-        root.querySelector("#ec-review-count").textContent = state.reviewWords.length;
-        root.querySelector(".ec-progress").classList.toggle("ec-hidden", specialView);
-        root.querySelector(".ec-stepper").classList.toggle("ec-hidden", specialView);
-        root.querySelector("[data-action=open-review]").classList.toggle("ec-hidden", !state.profile);
-        root.querySelector("[data-action=open-material]").classList.toggle("ec-hidden", !state.profile);
-        root.querySelector("[data-action=open-settings]").classList.toggle("ec-hidden", !state.profile);
-        root.querySelector("#ec-progress-bar").style.width = (((state.step + 1) / 6) * 100) + "%";
-        root.querySelectorAll(".ec-step").forEach(function (button) {
-          if (Number(button.dataset.step) === state.step) button.setAttribute("aria-current", "step");
-          else button.removeAttribute("aria-current");
-        });
-      }
-      function refreshIcons() {
-        if (window.lucide && typeof window.lucide.createIcons === "function") {
-          window.lucide.createIcons({ attrs: { width: 16, height: 16 } });
-        }
-      }
       function speak(text, rate) {
-        if (!("speechSynthesis" in window)) {
-          feedback("当前浏览器不支持语音播放，请使用最新版 Chrome 或 Edge。", true);
-          return;
-        }
+        if (!("speechSynthesis" in window)) { feedback("当前浏览器不支持语音播放，请使用最新版 Chrome 或 Edge。", true); return; }
         window.speechSynthesis.cancel();
-        var utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "en-US";
-        utterance.rate = Number(rate) || 0.88;
-        window.speechSynthesis.speak(utterance);
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = "en-US"; u.rate = Number(rate) || (state.mode === "kid" ? 0.72 : 0.88);
+        window.speechSynthesis.speak(u);
       }
-      function feedback(message, isError, targetId) {
-        var target = root.querySelector(targetId || "#ec-listen-feedback");
-        if (!target) return;
-        target.className = "ec-feedback";
-        if (isError) target.dataset.kind = "error";
-        else delete target.dataset.kind;
-        target.innerHTML = message;
+      function feedback(message, isError, target) {
+        var el = document.querySelector(target || "#feedback");
+        if (!el) return;
+        el.className = "feedback" + (isError ? " error" : "");
+        el.innerHTML = message;
+      }
+      function overlapScore(spoken, target) {
+        var a = unique(words(spoken)); var b = unique(words(target));
+        if (!a.length || !b.length) return 0;
+        return Math.round((b.filter(function (w) { return a.indexOf(w) >= 0; }).length / b.length) * 100);
+      }
+      function keywordScore(text, keywords) {
+        var lower = text.toLowerCase();
+        var hits = keywords.filter(function (k) { return lower.indexOf(k.toLowerCase()) >= 0; });
+        return { score: Math.round((hits.length / Math.max(1, keywords.length)) * 100), hits: hits };
       }
       function createRecognition(onResult, onEnd) {
         var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!Recognition) return null;
-        var recognition = new Recognition();
-        recognition.lang = "en-US";
-        recognition.interimResults = true;
-        recognition.continuous = false;
-        recognition.onresult = function (event) {
-          var result = "";
-          for (var i = event.resultIndex; i < event.results.length; i++) result += event.results[i][0].transcript;
-          onResult(result);
+        var r = new Recognition();
+        r.lang = "en-US"; r.interimResults = true; r.continuous = false;
+        r.onresult = function (event) {
+          var text = "";
+          for (var i = event.resultIndex; i < event.results.length; i++) text += event.results[i][0].transcript;
+          onResult(text);
         };
-        recognition.onend = onEnd;
-        recognition.onerror = onEnd;
-        return recognition;
+        r.onend = onEnd; r.onerror = onEnd;
+        return r;
       }
       function startRecording(button, textarea) {
         if (state.recording) return;
-        var label = button.querySelector("span");
-        var recognition = createRecognition(function (text) {
-          textarea.value = text;
-          textarea.dispatchEvent(new Event("input"));
-        }, function () {
-          state.recording = false;
-          label.textContent = button.dataset.mode === "speak" ? "开始复述" : "开始跟读";
-          button.classList.remove("ec-recording");
-          var dot = button.querySelector(".ec-dot");
-          if (dot) dot.remove();
+        var label = button.querySelector("span") || button;
+        var normal = label.textContent;
+        var r = createRecognition(function (text) { textarea.value = text; textarea.dispatchEvent(new Event("input")); }, function () {
+          state.recording = false; label.textContent = normal; button.disabled = false;
         });
-        if (!recognition) {
-          feedback("当前浏览器不支持语音转文字。你仍然可以播放示范，并在文本框中手动输入后评分。", true, button.dataset.mode === "speak" ? "#ec-speak-feedback" : "#ec-shadow-feedback");
-          textarea.focus();
-          return;
-        }
-        state.recording = true;
-        button.classList.add("ec-recording");
-        var dot = document.createElement("span");
-        dot.className = "ec-dot";
-        button.prepend(dot);
-        label.textContent = "正在录音…";
-        recognition.start();
+        if (!r) { feedback("当前浏览器不支持语音转文字。可以手动输入后评分。", true, button.dataset.target || "#feedback"); textarea.focus(); return; }
+        state.recording = true; button.disabled = true; label.textContent = "正在听...";
+        r.start();
       }
-
+      function renderShell() {
+        root.classList.toggle("kid", state.mode === "kid");
+        document.getElementById("subtitle").textContent = state.mode === "kid" ? "儿童零基础分级阅读和表达训练" : "成人英语听说读写训练";
+        document.getElementById("modeBadge").textContent = state.mode === "kid" ? "儿童模式" : "成人模式";
+        document.getElementById("levelBadge").textContent = state.profile && state.profile.mode === state.mode ? state.profile.level : "待测评";
+        document.getElementById("streakBadge").textContent = "连续 " + state.streak + " 天";
+        document.getElementById("timeBadge").textContent = (state.profile && state.profile.mode === state.mode ? state.profile.minutes : (state.mode === "kid" ? 10 : 20)) + " 分钟";
+        document.getElementById("reviewCount").textContent = state.reviewWords.length;
+        document.querySelectorAll("[data-action='set-mode']").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)); });
+        document.querySelector("[data-action='material']").classList.toggle("hidden", state.mode === "kid");
+        var nav = document.getElementById("steps");
+        nav.innerHTML = "";
+        steps().forEach(function (s, i) {
+          var b = document.createElement("button");
+          b.className = "step"; b.dataset.action = "go-step"; b.dataset.step = i;
+          if (state.view === "lesson" && state.step === i) b.setAttribute("aria-current", "step");
+          b.innerHTML = "<span class=\"step-num\">" + (i + 1) + "</span><span>" + s[0] + "<small>" + s[1] + "</small></span>";
+          nav.appendChild(b);
+        });
+        document.getElementById("progress").style.width = state.view === "lesson" ? (((state.step + 1) / 6) * 100) + "%" : "0";
+      }
       function renderSetup() {
-        var panel = root.querySelector("#ec-panel");
-        panel.replaceChildren(template("#ec-setup-template"));
-        if (state.profile) {
-          root.querySelector("#ec-goal").value = state.profile.goal;
-          root.querySelector("#ec-minutes").value = String(state.profile.minutes);
-          root.querySelector("#ec-cancel-settings").classList.remove("ec-hidden");
-        }
-      }
-      function startAssessment() {
-        state.draftProfile = {
-          goal: root.querySelector("#ec-goal").value,
-          minutes: Number(root.querySelector("#ec-minutes").value)
-        };
-        state.view = "assessment";
-        render();
+        var kid = state.mode === "kid";
+        panel.innerHTML = "<h2>" + (kid ? "先做一个小测评" : "建立你的英语训练档案") + "</h2>" +
+          "<p class=\"muted\">" + (kid ? "题目很短，从字母、单词和简单句开始。答错也没关系，系统会从合适的 Level 开始。" : "选择目标和每日时间，然后完成 5 道题，系统会安排合适难度。") + "</p>" +
+          "<div class=\"grid\" style=\"margin-top:14px\">" +
+          "<label class=\"field\">学习目标<select class=\"control\" id=\"goal\">" +
+          (kid ? "<option value=\"零基础启蒙\">零基础启蒙</option><option value=\"分级阅读\">分级阅读</option><option value=\"校内同步\">校内同步</option>" : "<option value=\"商务沟通\">商务沟通</option><option value=\"外贸英语\">外贸英语</option><option value=\"AI与培训\">AI 与培训</option><option value=\"综合提升\">综合听说读写</option>") +
+          "</select></label>" +
+          "<label class=\"field\">每天学习时间<select class=\"control\" id=\"minutes\">" +
+          (kid ? "<option value=\"5\">5 分钟</option><option value=\"10\" selected>10 分钟</option><option value=\"15\">15 分钟</option>" : "<option value=\"10\">10 分钟</option><option value=\"20\" selected>20 分钟</option><option value=\"30\">30 分钟</option>") +
+          "</select></label></div>" +
+          "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"start-assessment\">" + (kid ? "开始儿童测评" : "开始水平测评") + "</button>" +
+          (state.profile && state.profile.mode === state.mode ? "<button class=\"btn\" data-action=\"cancel-settings\">返回今日训练</button>" : "") + "</div>" +
+          "<div class=\"feedback\"><strong>本地学习记录</strong><br><span class=\"muted\">星星、错题、阅读记录和成人训练分数只保存在当前浏览器。可以导出备份。</span><div class=\"actions\"><button class=\"btn\" data-action=\"export\">导出进度</button><button class=\"btn\" data-action=\"choose-import\">导入进度</button><input class=\"hidden\" id=\"importFile\" type=\"file\" accept=\"application/json,.json\"></div></div><div id=\"feedback\"></div>";
       }
       function renderAssessment() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-assessment-template"));
-        var holder = root.querySelector("#ec-diagnostic");
-        diagnosticQuestions.forEach(function (q, questionIndex) {
+        var qs = state.mode === "kid" ? kidDiagnostic : adultDiagnostic;
+        panel.innerHTML = "<h2>" + (state.mode === "kid" ? "儿童零基础测评" : "英语水平测评") + "</h2><p class=\"muted\">" + (state.mode === "kid" ? "每题选一个答案。做完后会进入 Level 0 到 Level 3。" : "每题选择最合适的答案。") + "</p><div id=\"diagnostic\" class=\"choice-grid\"></div><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"submit-assessment\">完成测评并开始</button><button class=\"btn\" data-action=\"settings\">返回设置</button></div><div id=\"feedback\"></div>";
+        var holder = document.getElementById("diagnostic");
+        qs.forEach(function (q, qi) {
           var block = document.createElement("div");
-          block.innerHTML = "<strong>" + (questionIndex + 1) + ". " + q[0] + "</strong><div class=\"ec-options\"></div>";
-          q[1].forEach(function (option, optionIndex) {
-            var label = document.createElement("label");
-            label.className = "ec-option";
-            label.innerHTML = "<input type=\"radio\" name=\"diagnostic-" + questionIndex + "\" value=\"" + optionIndex + "\"><span>" + option + "</span>";
-            block.querySelector(".ec-options").appendChild(label);
+          block.innerHTML = "<strong>" + (qi + 1) + ". " + escapeHTML(q[0]) + "</strong><div class=\"choice-grid\"></div>";
+          q[1].forEach(function (opt, oi) {
+            block.querySelector(".choice-grid").insertAdjacentHTML("beforeend", "<label class=\"choice\"><input type=\"radio\" name=\"diag-" + qi + "\" value=\"" + oi + "\"><span>" + escapeHTML(opt) + "</span></label>");
           });
           holder.appendChild(block);
         });
       }
       function submitAssessment() {
-        var answered = 0;
-        var correct = 0;
-        diagnosticQuestions.forEach(function (q, i) {
-          var selected = root.querySelector("input[name=diagnostic-" + i + "]:checked");
-          if (selected) {
-            answered += 1;
-            if (Number(selected.value) === q[2]) correct += 1;
-          }
+        var qs = state.mode === "kid" ? kidDiagnostic : adultDiagnostic;
+        var answered = 0; var correct = 0;
+        qs.forEach(function (q, i) {
+          var s = document.querySelector("input[name='diag-" + i + "']:checked");
+          if (s) { answered += 1; if (Number(s.value) === q[2]) correct += 1; }
         });
-        if (answered < diagnosticQuestions.length) {
-          feedback("还有 " + (diagnosticQuestions.length - answered) + " 题没有完成。", true, "#ec-assessment-feedback");
-          return;
+        if (answered < qs.length) { feedback("还有 " + (qs.length - answered) + " 题没完成。", true); return; }
+        var goal = document.getElementById("goal") ? document.getElementById("goal").value : (state.mode === "kid" ? "分级阅读" : "综合提升");
+        var minutes = document.getElementById("minutes") ? Number(document.getElementById("minutes").value) : (state.mode === "kid" ? 10 : 20);
+        if (state.mode === "kid") {
+          var level = correct <= 1 ? 0 : correct <= 2 ? 1 : correct <= 4 ? 2 : 3;
+          state.kidLevel = level;
+          state.profile = { mode: "kid", goal: goal, minutes: minutes, level: "儿童 Level " + level, diagnosticScore: correct };
+        } else {
+          var adultLevel = correct <= 2 ? "A2 入门" : correct <= 4 ? "A2+ 进阶" : "B1 初级";
+          state.adultDay = correct <= 2 ? 0 : correct <= 4 ? 2 : 3;
+          state.profile = { mode: "adult", goal: goal, minutes: minutes, level: adultLevel, diagnosticScore: correct };
         }
-        var level = correct <= 2 ? "A2 入门" : correct <= 4 ? "A2+ 进阶" : "B1 初级";
-        var startDay = correct <= 2 ? 0 : correct <= 4 ? 2 : 4;
-        var draft = state.draftProfile || { goal: "综合提升", minutes: 20 };
-        state.profile = { goal: draft.goal, minutes: draft.minutes, level: level, diagnosticScore: correct };
-        state.day = startDay;
-        state.view = "lesson";
-        resetTraining();
-        persist();
-        render();
+        state.view = "lesson"; resetTraining(); persist(); render();
+      }
+      function renderListen() {
+        if (state.mode === "kid") { renderKidWarmup(); return; }
+        panel.innerHTML = "<h2>先听后看</h2><p class=\"muted\">播放两遍，不看原文。然后回答理解题。</p><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"play-all\">播放全文</button><label class=\"field\" style=\"max-width:140px\">语速<select class=\"control\" id=\"rate\"><option value=\"0.72\">慢速</option><option value=\"0.88\" selected>正常</option><option value=\"1\">快速</option></select></label><span class=\"muted\" id=\"playCount\">已播放 " + state.playCount + " 次</span></div><div id=\"question\"></div><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"submit-answer\">提交答案</button><span class=\"muted\" id=\"questionCount\"></span></div><div id=\"feedback\"></div>";
+        renderQuestion();
+      }
+      function renderKidWarmup() {
+        var l = lesson();
+        panel.innerHTML = "<h2>先听一听</h2><p class=\"muted\">今天是 " + escapeHTML(l.level) + "。先听单词和句子，再去做阅读挑战。</p><div class=\"feedback\"><strong>" + escapeHTML(l.title) + "</strong><br>" + l.sentences.map(escapeHTML).join("<br>") + "</div><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"play-all\">听老师读</button><button class=\"btn btn-primary\" data-action=\"next-step\">我准备好了</button></div><div id=\"feedback\"></div>";
+      }
+      function renderQuestion() {
+        var q = lesson().questions[state.question];
+        var holder = document.getElementById("question");
+        holder.innerHTML = "<p class=\"sentence\"><strong>" + (state.question + 1) + ". " + escapeHTML(q[0]) + "</strong></p><div class=\"choice-grid\"></div>";
+        q[1].forEach(function (opt, i) { holder.querySelector(".choice-grid").insertAdjacentHTML("beforeend", "<label class=\"choice\"><input type=\"radio\" name=\"answer\" value=\"" + i + "\"><span>" + escapeHTML(opt) + "</span></label>"); });
+        document.getElementById("questionCount").textContent = (state.question + 1) + " / " + lesson().questions.length;
+      }
+      function submitAnswer() {
+        var s = document.querySelector("input[name='answer']:checked");
+        if (!s) { feedback(state.mode === "kid" ? "先选一个答案吧。" : "请先选择一个答案。", true); return; }
+        var q = lesson().questions[state.question];
+        var ok = Number(s.value) === q[2];
+        if (ok) state.correct += 1; else addReviewWord(lesson().vocab[state.question % lesson().vocab.length], state.mode === "kid" ? "阅读挑战错题" : "听力错题");
+        feedback(ok ? (state.mode === "kid" ? "答对了，得到一颗星！" : "回答正确。") : "正确答案是：<strong>" + escapeHTML(q[1][q[2]]) + "</strong>", !ok);
+        var b = document.querySelector("[data-action='submit-answer']");
+        b.dataset.action = "advance-question"; b.textContent = state.question < lesson().questions.length - 1 ? "下一题" : (state.mode === "kid" ? "看我的星星" : "查看原文");
+      }
+      function advanceQuestion() {
+        if (state.question < lesson().questions.length - 1) {
+          state.question += 1; renderQuestion();
+          var b = document.querySelector("[data-action='advance-question']");
+          b.dataset.action = "submit-answer"; b.textContent = "提交答案";
+          document.getElementById("feedback").innerHTML = ""; document.getElementById("feedback").className = "";
+        } else {
+          state.scores.listen = Math.round((state.correct / lesson().questions.length) * 100);
+          state.scores.read = state.scores.listen;
+          goStep(1);
+        }
+      }
+      function renderRead() {
+        var kid = state.mode === "kid"; var l = lesson();
+        panel.innerHTML = "<h2>阅读挑战</h2><p class=\"muted\">" + (kid ? "读一读，点单词，再回答理解选择题。每答对一题都有星星。" : "边听边读，查看重点词，然后进入跟读。") + "</p><div class=\"actions\"><button class=\"btn\" data-action=\"play-all\">边听边读</button><button class=\"btn\" data-action=\"toggle-translation\">" + (state.showTranslation ? "隐藏中文" : "显示中文") + "</button></div><div id=\"transcript\"></div><div class=\"vocab\" id=\"vocab\"></div><div id=\"vocabDetail\" class=\"feedback hidden\"></div>" + (kid ? "<div id=\"kidChallenge\"></div>" : "") + "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"" + (kid ? "finish-kid-reading" : "next-step") + "\">" + (kid ? "完成阅读挑战" : "完成阅读挑战，开始跟读") + "</button></div><div id=\"feedback\"></div>";
+        var t = document.getElementById("transcript");
+        l.sentences.forEach(function (s, i) { t.insertAdjacentHTML("beforeend", "<p class=\"sentence\">" + escapeHTML(s) + "</p><p class=\"translation " + (state.showTranslation ? "" : "hidden") + "\">" + escapeHTML(l.translations[i] || "") + "</p>"); });
+        l.vocab.forEach(function (v, i) { document.getElementById("vocab").insertAdjacentHTML("beforeend", "<button class=\"btn\" data-action=\"show-vocab\" data-index=\"" + i + "\">" + escapeHTML(v[0]) + "</button>"); });
+        if (kid) renderKidChallenge();
+      }
+      function renderKidChallenge() {
+        var wrap = document.getElementById("kidChallenge");
+        wrap.innerHTML = "<h3>理解选择题</h3><div id=\"question\"></div><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"submit-answer\">提交答案</button><span class=\"muted\" id=\"questionCount\"></span></div>";
+        state.question = clamp(state.question, 0, lesson().questions.length - 1);
+        renderQuestion();
+      }
+      function showVocab(index) {
+        var v = lesson().vocab[index]; addReviewWord(v, state.mode === "kid" ? "阅读挑战重点词" : "阅读重点词");
+        document.getElementById("reviewCount").textContent = state.reviewWords.length;
+        var d = document.getElementById("vocabDetail");
+        d.classList.remove("hidden"); d.innerHTML = "<strong>" + escapeHTML(v[0]) + "</strong> - " + escapeHTML(v[1]) + "<br><span class=\"muted\">" + escapeHTML(v[2]) + "</span>";
+      }
+      function finishKidReading() {
+        state.scores.listen = state.scores.read || Math.round((state.correct / lesson().questions.length) * 100);
+        feedback("阅读挑战完成！继续跟读可以再拿星星。", false);
+        goStep(2);
+      }
+      function renderShadow() {
+        panel.innerHTML = "<h2>" + (state.mode === "kid" ? "跟我说" : "逐句跟读") + "</h2><p class=\"muted\">" + (state.mode === "kid" ? "先听，再读。读不准也没关系，可以慢慢来。" : "先听示范，再录音或手动输入。") + "</p><p class=\"sentence\">" + escapeHTML(lesson().sentences[state.shadowIndex]) + "</p><p class=\"translation " + (state.showTranslation ? "" : "hidden") + "\">" + escapeHTML(lesson().translations[state.shadowIndex]) + "</p><div class=\"actions\"><button class=\"btn\" data-action=\"play-sentence\">听这一句</button><button class=\"btn btn-primary\" data-action=\"record-shadow\" data-target=\"#feedback\"><span>开始跟读</span></button><span class=\"muted\">第 " + (state.shadowIndex + 1) + " / " + lesson().sentences.length + " 句</span></div><textarea class=\"control\" id=\"shadowText\" placeholder=\"Speak or type here...\"></textarea><div class=\"actions\"><button class=\"btn\" data-action=\"score-shadow\">检查本句</button><button class=\"btn btn-primary hidden\" data-action=\"next-sentence\">下一句</button></div><div id=\"feedback\"></div>";
+      }
+      function scoreShadow() {
+        var text = document.getElementById("shadowText").value.trim();
+        if (!text) { feedback(state.mode === "kid" ? "可以先跟读，或者把句子打出来。" : "请先跟读录音，或手动输入。", true); return; }
+        var score = overlapScore(text, lesson().sentences[state.shadowIndex]);
+        state.shadowScores[state.shadowIndex] = score;
+        feedback((state.mode === "kid" ? "本句星星：" + stars(score) : "本句匹配度：<strong>" + score + "</strong>") + "<br>" + (score >= 80 ? "很好，继续下一句。" : "再听一次，慢慢读会更好。"), score < 50);
+        document.querySelector("[data-action='next-sentence']").classList.remove("hidden");
+      }
+      function nextSentence() {
+        if (state.shadowIndex < lesson().sentences.length - 1) { state.shadowIndex += 1; render(); return; }
+        var total = state.shadowScores.reduce(function (a, b) { return a + (b || 0); }, 0);
+        state.scores.shadow = Math.round(total / lesson().sentences.length);
+        goStep(3);
+      }
+      function renderSpeak() {
+        panel.innerHTML = "<h2>" + (state.mode === "kid" ? "小表达" : "60 秒口语复述") + "</h2><p>任务：<strong>" + escapeHTML(lesson().speakPrompt) + "</strong></p><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"record-speak\" data-target=\"#feedback\"><span>" + (state.mode === "kid" ? "说给我听" : "开始复述") + "</span></button><span class=\"muted\">" + (state.mode === "kid" ? "说一句完整英文就可以。" : "目标：至少说出 3 个关键信息。") + "</span></div><textarea class=\"control\" id=\"speakText\" placeholder=\"Speak or type your answer in English...\"></textarea><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"score-speak\">本地检查</button>" + (state.mode === "adult" ? "<button class=\"btn\" data-action=\"ai-speak\">AI 深度点评</button>" : "") + "</div><div id=\"feedback\"></div><div id=\"aiFeedback\"></div>";
+      }
+      function scoreSpeak() {
+        var text = document.getElementById("speakText").value.trim();
+        if (!text) { feedback(state.mode === "kid" ? "先说一句或打一行英文。" : "请先录音复述，或输入英文回答。", true); return; }
+        var result = keywordScore(text, lesson().keywords);
+        var score = Math.min(100, Math.round(result.score * 0.75 + Math.min(25, words(text).length * (state.mode === "kid" ? 4 : 1))));
+        state.scores.speak = score;
+        feedback((state.mode === "kid" ? "表达星星：" + stars(score) : "口语表达：<strong>" + score + "</strong>") + "<br>已用关键词：" + (result.hits.join("、") || "暂无") + "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"next-step\">" + (state.mode === "kid" ? "去写一写" : "进入写作") + "</button></div>", score < 50);
+      }
+      function renderWrite() {
+        panel.innerHTML = "<h2>" + (state.mode === "kid" ? "小书写" : "把今天的英语用出来") + "</h2><p>" + escapeHTML(lesson().writePrompt) + "</p><label class=\"field\">英文内容 <span id=\"wordCount\">0 words</span><textarea class=\"control\" id=\"writeText\" placeholder=\"" + (state.mode === "kid" ? "Copy or write easy English here..." : "Write your answer in English...") + "\"></textarea></label><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"score-write\">检查写作</button>" + (state.mode === "adult" ? "<button class=\"btn\" data-action=\"ai-write\">AI 深度批改</button>" : "") + "</div><div id=\"feedback\"></div><div id=\"aiFeedback\"></div>";
+      }
+      function scoreWrite() {
+        var text = document.getElementById("writeText").value.trim();
+        var count = words(text).length;
+        var min = state.mode === "kid" ? 3 : 12;
+        if (count < min) { feedback(state.mode === "kid" ? "再写一点点，至少 3 个英文单词。" : "内容太短，请至少写 12 个英文单词。", true); return; }
+        var result = keywordScore(text, lesson().keywords);
+        var punctuation = /[.!?]$/.test(text);
+        var score = Math.min(100, Math.round(Math.min(state.mode === "kid" ? 45 : 40, count * (state.mode === "kid" ? 9 : 1)) + result.score * 0.45 + (punctuation ? 10 : 0)));
+        state.scores.write = score;
+        feedback((state.mode === "kid" ? "书写星星：" + stars(score) : "写作得分：<strong>" + score + "</strong>") + "<br>单词数：" + count + "<br>" + (score >= 70 ? "表达清楚，可以生成报告。" : "可以加入今天的关键词，再补一个完整句。") + "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"next-step\">" + (state.mode === "kid" ? "看星星报告" : "生成今日报告") + "</button></div>", score < 50);
+      }
+      function stars(score) {
+        var n = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+        return "<span class=\"stars\">" + "★".repeat(n) + "☆".repeat(3 - n) + "</span>";
+      }
+      function renderReport() {
+        var vals = [state.scores.listen || state.scores.read, state.scores.shadow, state.scores.speak, state.scores.write];
+        var total = Math.round(vals.reduce(function (a, b) { return a + (b || 0); }, 0) / vals.length);
+        var kid = state.mode === "kid";
+        panel.innerHTML = "<h2>" + (kid ? "星星报告" : "今日学习报告") + "</h2>" +
+          (kid ? "<div class=\"feedback\"><strong>今天得到</strong><br>" + stars(total) + "<br>你完成了 " + escapeHTML(lesson().level) + " 阅读挑战。</div>" : "") +
+          "<div class=\"score-grid\"><div class=\"score\"><span class=\"muted\">" + (kid ? "阅读挑战" : "听力理解") + "</span><strong>" + (state.scores.listen || state.scores.read) + "</strong></div><div class=\"score\"><span class=\"muted\">跟读</span><strong>" + state.scores.shadow + "</strong></div><div class=\"score\"><span class=\"muted\">" + (kid ? "小表达" : "口语表达") + "</span><strong>" + state.scores.speak + "</strong></div><div class=\"score\"><span class=\"muted\">" + (kid ? "小书写" : "英文写作") + "</span><strong>" + state.scores.write + "</strong></div></div>" +
+          "<div class=\"feedback\"><strong>" + (total >= 75 ? (kid ? "可以升级或继续练习" : "下一课：继续推进") : (kid ? "再练一次会更稳" : "下一课：巩固练习")) + "</strong><br>" + (kid ? "短时间、多鼓励、每天一点点。学习记录已保存在本地。" : "系统会根据今天的表现安排下一篇材料。") + "</div>" +
+          renderHistory() +
+          "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"finish-day\">保存记录，安排下一课</button><button class=\"btn\" data-action=\"restart-day\">重新练习今天</button></div>";
+      }
+      function renderHistory() {
+        if (!state.history.length) return "";
+        return "<h3>最近学习记录</h3><div class=\"history\">" + state.history.slice(-7).map(function (h) {
+          return "<div class=\"bar\" style=\"--h:" + Math.max(4, h.total) + "%\"><span></span><small>" + h.total + "</small></div>";
+        }).join("") + "</div>";
+      }
+      function finishDay() {
+        var vals = [state.scores.listen || state.scores.read, state.scores.shadow, state.scores.speak, state.scores.write];
+        var total = Math.round(vals.reduce(function (a, b) { return a + (b || 0); }, 0) / vals.length);
+        state.history.push({ date: new Date().toISOString().slice(0, 10), mode: state.mode, level: lesson().level, topic: lesson().topic, total: total, scores: Object.assign({}, state.scores) });
+        state.history = state.history.slice(-60);
+        state.streak += 1;
+        if (state.mode === "kid" && total >= 80 && state.kidLevel < 3) state.kidLevel += 1;
+        if (state.mode === "adult") state.adultDay = (state.adultDay + 1) % adultLessons.length;
+        state.customActive = false; resetTraining(); persist(); render();
       }
       function renderReview() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-review-template"));
-        var holder = root.querySelector("#ec-review-list");
-        if (!state.reviewWords.length) {
-          holder.innerHTML = "<div class=\"ec-feedback\"><strong>目前没有待复习内容</strong><br>精读时点击重点词，或听力答错后，相关词汇会自动出现在这里。</div>";
-          return;
-        }
-        state.reviewWords.forEach(function (item, index) {
-          var row = document.createElement("div");
-          row.className = "ec-review-item";
-          row.innerHTML = "<div><strong>" + item.word + "</strong> · " + item.meaning + "<p class=\"text-muted\">" + item.example + " · " + item.reason + "</p></div><div class=\"ec-actions\"><button type=\"button\" class=\"btn\" data-action=\"play-review\" data-index=\"" + index + "\">发音</button><button type=\"button\" class=\"btn\" data-action=\"master-word\" data-index=\"" + index + "\">已掌握</button></div>";
-          holder.appendChild(row);
+        panel.innerHTML = "<h2>复习</h2><p class=\"muted\">阅读挑战、重点词和错题会自动收集到这里。</p><div class=\"review-list\" id=\"reviewList\"></div><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"close-view\">返回训练</button></div>";
+        var list = document.getElementById("reviewList");
+        if (!state.reviewWords.length) { list.innerHTML = "<div class=\"feedback\">目前没有待复习内容。</div>"; return; }
+        state.reviewWords.forEach(function (item, i) {
+          list.insertAdjacentHTML("beforeend", "<div class=\"choice\"><div><strong>" + escapeHTML(item.word) + "</strong> - " + escapeHTML(item.meaning) + "<p class=\"muted\">" + escapeHTML(item.example) + " · " + escapeHTML(item.reason) + "</p></div><div class=\"actions\"><button class=\"btn\" data-action=\"play-review\" data-index=\"" + i + "\">发音</button><button class=\"btn\" data-action=\"master-word\" data-index=\"" + i + "\">已掌握</button></div></div>");
         });
       }
       function renderMaterial() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-material-template"));
-        if (state.customLesson) {
-          root.querySelector("#ec-material-topic").value = state.customLesson.topic || "";
-          root.querySelector("#ec-material-title").value = state.customLesson.title || "";
-          root.querySelector("#ec-material-text").value = state.customLesson.sentences.join(" ");
-          root.querySelector("#ec-material-translation").value = state.customLesson.translations.filter(function (t) { return t !== "请结合上下文理解。"; }).join(" ");
-        }
+        panel.innerHTML = "<h2>用自己的英文材料训练</h2><p class=\"muted\">成人模式可粘贴 3-8 句英文，生成听力、阅读挑战、跟读、复述和写作训练。</p><div class=\"grid\"><label class=\"field\">材料主题<input class=\"control\" id=\"materialTopic\" placeholder=\"例如：AI 项目介绍\"></label><label class=\"field\">英文标题<input class=\"control\" id=\"materialTitle\" placeholder=\"例如：My AI Project\"></label></div><label class=\"field\" style=\"margin-top:12px\">英文内容<textarea class=\"control\" id=\"materialText\" placeholder=\"Paste 3-8 complete English sentences here...\"></textarea></label><label class=\"field\">中文参考，可选<textarea class=\"control\" id=\"materialCn\" placeholder=\"可留空\"></textarea></label><div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"build-material\">生成今日训练</button><button class=\"btn\" data-action=\"close-view\">返回</button></div><div id=\"feedback\"></div>";
       }
       function buildMaterial() {
-        var topic = root.querySelector("#ec-material-topic").value.trim().replace(/[<>]/g, "") || "自定义材料";
-        var title = root.querySelector("#ec-material-title").value.trim().replace(/[<>]/g, "") || "My English Practice";
-        var text = root.querySelector("#ec-material-text").value.trim().replace(/[<>]/g, "");
-        var chinese = root.querySelector("#ec-material-translation").value.trim().replace(/[<>]/g, "");
+        var topic = document.getElementById("materialTopic").value.trim() || "自定义材料";
+        var title = document.getElementById("materialTitle").value.trim() || "My English Practice";
+        var text = document.getElementById("materialText").value.trim();
+        var cn = document.getElementById("materialCn").value.trim();
         var sentences = (text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || []).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 8);
-        if (sentences.length < 3) {
-          feedback("请至少粘贴3个带标点的完整英文句子。", true, "#ec-material-feedback");
-          return;
-        }
+        if (sentences.length < 3) { feedback("请至少粘贴 3 个完整英文句子。", true); return; }
         var stop = ["about", "after", "again", "before", "could", "every", "their", "there", "these", "they", "this", "those", "which", "would", "should", "with", "from", "have", "that", "your", "into", "when", "where"];
         var allWords = unique(words(text).filter(function (w) { return w.length >= 5 && stop.indexOf(w) < 0; }));
         if (allWords.length < 3) allWords = unique(words(text).filter(function (w) { return w.length >= 4; }));
         var keywords = allWords.slice(0, 6);
-        var translations = chinese ? (chinese.match(/[^。！？]+[。！？]+|[^。！？]+$/g) || []).map(function (s) { return s.trim(); }) : [];
+        var translations = cn ? cn.split(/[。！？.!?]+/).map(function (s) { return s.trim(); }).filter(Boolean) : [];
         while (translations.length < sentences.length) translations.push("请结合上下文理解。");
-        translations = translations.slice(0, sentences.length);
         var questions = sentences.slice(0, 3).map(function (sentence, index) {
-          var candidates = words(sentence).filter(function (w) { return w.length >= 5 && stop.indexOf(w) < 0; });
-          var answer = candidates[0] || words(sentence).filter(function (w) { return w.length >= 4; })[0] || "English";
-          var expression = new RegExp("\\b" + answer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
-          var question = sentence.replace(expression, "___");
-          var alternatives = allWords.filter(function (w) { return w.toLowerCase() !== answer.toLowerCase(); }).slice(index, index + 2);
-          while (alternatives.length < 2) alternatives.push(alternatives.length ? "different" : "example");
-          return [question, [answer, alternatives[0], alternatives[1]], 0];
+          var answer = words(sentence).filter(function (w) { return w.length >= 5 && stop.indexOf(w) < 0; })[0] || words(sentence)[0] || "English";
+          var alts = allWords.filter(function (w) { return w.toLowerCase() !== answer.toLowerCase(); }).slice(index, index + 2);
+          while (alts.length < 2) alts.push(alts.length ? "example" : "different");
+          return [sentence.replace(new RegExp("\\b" + answer + "\\b", "i"), "___"), [answer, alts[0], alts[1]], 0];
         });
-        var vocab = keywords.slice(0, 4).map(function (word) {
-          var example = sentences.find(function (sentence) { return sentence.toLowerCase().indexOf(word) >= 0; }) || sentences[0];
-          return [word, "自定义重点词", example];
-        });
-        state.customLesson = {
-          topic: topic,
-          title: title,
-          level: state.profile ? state.profile.level : "A2 入门",
-          sentences: sentences,
-          translations: translations,
-          vocab: vocab,
-          questions: questions,
-          speakPrompt: "Summarize the main idea in your own words.",
-          keywords: keywords,
-          writePrompt: "Write 50–100 words about the same topic using at least three key words."
-        };
-        state.customActive = true;
-        state.view = "lesson";
-        resetTraining();
-        persist();
-        render();
+        state.customLesson = { mode: "adult", topic: topic, title: title, level: state.profile ? state.profile.level : "A2 入门", sentences: sentences, translations: translations.slice(0, sentences.length), vocab: keywords.slice(0, 4).map(function (w) { return [w, "自定义重点词", sentences.find(function (s) { return s.toLowerCase().indexOf(w) >= 0; }) || sentences[0]]; }), questions: questions, speakPrompt: "Summarize the main idea in your own words.", keywords: keywords, writePrompt: "Write 50-100 words about the same topic using at least three key words." };
+        state.customActive = true; state.view = "lesson"; resetTraining(); persist(); render();
       }
       function exportProgress() {
-        var data = localStorage.getItem("slash-english-coach") || "{}";
-        var blob = new Blob([data], { type: "application/json" });
+        var blob = new Blob([localStorage.getItem(STORAGE_KEY) || "{}"], { type: "application/json" });
         var url = URL.createObjectURL(blob);
-        var link = document.createElement("a");
-        link.href = url;
-        link.download = "english-coach-progress.json";
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        var a = document.createElement("a"); a.href = url; a.download = "english-coach-progress.json"; a.click();
         URL.revokeObjectURL(url);
-        feedback("进度文件已导出，请妥善保存。", false, "#ec-settings-feedback");
       }
       function importProgress(file) {
         if (!file) return;
@@ -1455,231 +585,40 @@ svg {
           try {
             var data = JSON.parse(String(reader.result || "{}"));
             if (!data.profile || !Array.isArray(data.history) || !Array.isArray(data.reviewWords)) throw new Error("invalid");
-            localStorage.setItem("slash-english-coach", JSON.stringify(data));
-            saved = data;
-            state.day = Number(data.day) || 0;
-            state.streak = Number(data.streak) || 0;
-            state.profile = data.profile;
-            state.reviewWords = data.reviewWords;
-            state.history = data.history;
-            state.customLesson = data.customLesson || null;
-            state.customActive = Boolean(data.customActive && data.customLesson);
-            state.view = "lesson";
-            resetTraining();
-            render();
-          } catch (e) {
-            feedback("进度文件无法识别，请选择本工具导出的JSON文件。", true, "#ec-settings-feedback");
-          }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); saved = data; location.reload();
+          } catch (_) { feedback("进度文件无法识别，请选择本工具导出的 JSON 文件。", true); }
         };
         reader.readAsText(file);
       }
-
-      function renderListen() {
-        var panel = root.querySelector("#ec-panel");
-        panel.replaceChildren(template("#ec-listen-template"));
-        renderQuestion();
-        root.querySelector("#ec-play-count").textContent = "已播放 " + state.playCount + " 次";
+      async function requestAICoach(type, answer, target, button) {
+        if (!answer || words(answer).length < 5) { feedback("请先完成英文回答，再使用 AI 深度点评。", true, target); return; }
+        var original = button.textContent; button.disabled = true; button.textContent = "AI 正在分析...";
+        var code = localStorage.getItem("english-coach-access-code") || "";
+        var payload = { type: type, answer: answer, prompt: type === "speaking" ? lesson().speakPrompt : lesson().writePrompt, reference: lesson().sentences.join(" "), level: state.profile ? state.profile.level : lesson().level, topic: lesson().topic };
+        async function send(c) { return fetch("/api/coach", { method: "POST", headers: { "content-type": "application/json", "x-app-code": c }, body: JSON.stringify(payload) }); }
+        try {
+          var res = await send(code);
+          if (res.status === 401) { code = window.prompt("请输入在线版访问码") || ""; if (code) localStorage.setItem("english-coach-access-code", code); res = await send(code); }
+          var data = await res.json();
+          if (!res.ok) throw new Error(data.error || "AI 服务暂时不可用");
+          var f = data.feedback || {};
+          document.querySelector(target).className = "feedback";
+          document.querySelector(target).innerHTML = "<strong>AI 综合评分：" + escapeHTML(f.score) + "</strong><br><p>" + escapeHTML(f.summary || "") + "</p><strong>更自然表达</strong><p>" + escapeHTML(f.improved_answer || "") + "</p><strong>下一步</strong><p>" + escapeHTML(f.next_action || "") + "</p>";
+          if (type === "speaking") state.scores.speak = Number(f.score) || state.scores.speak;
+          if (type === "writing") state.scores.write = Number(f.score) || state.scores.write;
+        } catch (e) {
+          feedback("AI 服务未连接或暂时不可用，已保留本地评分。提示：" + escapeHTML(e.message), true, target);
+        } finally { button.disabled = false; button.textContent = original; }
       }
-      function renderQuestion() {
-        var q = lesson().questions[state.question];
-        var holder = root.querySelector("#ec-question");
-        holder.innerHTML = "<p><strong>" + (state.question + 1) + ". " + q[0] + "</strong></p><div class=\"ec-options\"></div>";
-        var options = holder.querySelector(".ec-options");
-        q[1].forEach(function (option, index) {
-          var label = document.createElement("label");
-          label.className = "ec-option";
-          label.innerHTML = "<input type=\"radio\" name=\"ec-answer\" value=\"" + index + "\"><span>" + option + "</span>";
-          options.appendChild(label);
-        });
-        root.querySelector("#ec-question-count").textContent = (state.question + 1) + " / " + lesson().questions.length;
+      async function checkAIHealth() {
+        try {
+          var res = await fetch("/api/health"); var data = await res.json();
+          document.getElementById("aiBadge").textContent = data.aiConfigured ? "AI 已连接" : "本地模式";
+        } catch (_) { document.getElementById("aiBadge").textContent = "本地模式"; }
       }
-      function submitAnswer() {
-        var selected = root.querySelector("input[name=ec-answer]:checked");
-        if (!selected) { feedback("请先选择一个答案。", true); return; }
-        var q = lesson().questions[state.question];
-        var ok = Number(selected.value) === q[2];
-        if (ok) state.correct += 1;
-        else addReviewWord(lesson().vocab[state.question % lesson().vocab.length], "听力错题");
-        feedback(ok ? "回答正确。" : "正确答案是：<strong>" + q[1][q[2]] + "</strong>", !ok);
-        var submit = root.querySelector("[data-action=submit-answer]");
-        submit.textContent = state.question < lesson().questions.length - 1 ? "下一题" : "查看原文";
-        submit.dataset.action = "advance-question";
-      }
-      function advanceQuestion() {
-        if (state.question < lesson().questions.length - 1) {
-          state.question += 1;
-          renderQuestion();
-          var submit = root.querySelector("[data-action=advance-question]");
-          submit.textContent = "提交答案";
-          submit.dataset.action = "submit-answer";
-          var fb = root.querySelector("#ec-listen-feedback");
-          fb.className = "";
-          fb.innerHTML = "";
-        } else {
-          state.scores.listen = Math.round((state.correct / lesson().questions.length) * 100);
-          goStep(1);
-        }
-      }
-
-      function renderRead() {
-        var panel = root.querySelector("#ec-panel");
-        panel.replaceChildren(template("#ec-read-template"));
-        var transcript = root.querySelector("#ec-transcript");
-        lesson().sentences.forEach(function (sentence, i) {
-          var block = document.createElement("div");
-          block.innerHTML = "<p class=\"ec-sentence\">" + sentence + "</p><p class=\"ec-translation " + (state.showTranslation ? "" : "ec-hidden") + "\">" + lesson().translations[i] + "</p>";
-          transcript.appendChild(block);
-        });
-        lesson().vocab.forEach(function (v, i) {
-          var button = document.createElement("button");
-          button.type = "button";
-          button.className = "btn";
-          button.dataset.action = "show-vocab";
-          button.dataset.index = String(i);
-          button.textContent = v[0];
-          root.querySelector("#ec-vocab").appendChild(button);
-        });
-      }
-      function showVocab(index) {
-        var v = lesson().vocab[index];
-        addReviewWord(v, "精读重点词");
-        root.querySelector("#ec-review-count").textContent = state.reviewWords.length;
-        var detail = root.querySelector("#ec-vocab-detail");
-        detail.classList.remove("ec-hidden");
-        detail.innerHTML = "<strong>" + v[0] + "</strong> · " + v[1] + "<br><span class=\"text-muted\">" + v[2] + "</span>";
-      }
-
-      function renderShadow() {
-        var panel = root.querySelector("#ec-panel");
-        panel.replaceChildren(template("#ec-shadow-template"));
-        root.querySelector("#ec-shadow-sentence").textContent = lesson().sentences[state.shadowIndex];
-        root.querySelector("#ec-shadow-translation").textContent = lesson().translations[state.shadowIndex];
-        root.querySelector("#ec-shadow-count").textContent = "第 " + (state.shadowIndex + 1) + " / " + lesson().sentences.length + " 句";
-      }
-      function scoreShadow() {
-        var spoken = root.querySelector("#ec-shadow-text").value.trim();
-        if (!spoken) { feedback("请先跟读录音，或在文本框输入你说出的英文。", true, "#ec-shadow-feedback"); return; }
-        var targetSentence = lesson().sentences[state.shadowIndex];
-        var score = overlapScore(spoken, targetSentence);
-        state.shadowScores[state.shadowIndex] = score;
-        var spokenWords = unique(words(spoken));
-        var missingWords = unique(words(targetSentence)).filter(function (word) { return spokenWords.indexOf(word) < 0; });
-        var message = score >= 85 ? "非常接近原句，可以进入下一句。" : score >= 60 ? "基本准确。再听一次，注意遗漏的单词。" : "匹配度偏低，建议放慢语速，分成短语再跟读。";
-        feedback("本句匹配度：<strong>" + score + "</strong><br>" + message + (missingWords.length ? "<br>可能漏读：<strong>" + missingWords.slice(0, 6).join("、") + "</strong>" : "<br>没有明显漏词。"), score < 60, "#ec-shadow-feedback");
-        root.querySelector("[data-action=next-sentence]").classList.remove("ec-hidden");
-      }
-      function nextSentence() {
-        if (state.shadowIndex < lesson().sentences.length - 1) {
-          state.shadowIndex += 1;
-          renderShadow();
-          refreshIcons();
-        } else {
-          var total = state.shadowScores.reduce(function (a, b) { return a + (b || 0); }, 0);
-          state.scores.shadow = Math.round(total / lesson().sentences.length);
-          goStep(3);
-        }
-      }
-
-      function renderSpeak() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-speak-template"));
-        root.querySelector("#ec-speak-prompt").textContent = lesson().speakPrompt;
-        root.querySelector("[data-action=record-speak]").dataset.mode = "speak";
-      }
-      function scoreSpeak() {
-        var text = root.querySelector("#ec-speak-text").value.trim();
-        if (!text) { feedback("请先录音复述，或输入你的英文回答。", true, "#ec-speak-feedback"); return; }
-        var result = keywordScore(text, lesson().keywords);
-        var length = words(text).length;
-        var score = Math.min(100, Math.round(result.score * 0.75 + Math.min(25, length)));
-        state.scores.speak = score;
-        var missing = lesson().keywords.filter(function (k) { return result.hits.indexOf(k) < 0; });
-        var modelAnswer = lesson().sentences.slice(0, Math.min(3, lesson().sentences.length)).join(" ");
-        feedback("口语表达：<strong>" + score + "</strong><br>已覆盖关键词：" + (result.hits.join("、") || "暂无") + (missing.length ? "<br>可以补充：" + missing.slice(0, 3).join("、") : "<br>关键信息覆盖完整。") + "<br><strong>参考表达：</strong> " + modelAnswer, score < 60, "#ec-speak-feedback");
-        var holder = root.querySelector("#ec-speak-feedback");
-        var actions = document.createElement("div");
-        actions.className = "ec-actions";
-        actions.innerHTML = "<button type=\"button\" class=\"btn btn-primary\" data-action=\"next-step\">进入写作</button>";
-        holder.appendChild(actions);
-      }
-
-      function renderWrite() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-write-template"));
-        root.querySelector("#ec-write-prompt").textContent = lesson().writePrompt;
-      }
-      function scoreWrite() {
-        var text = root.querySelector("#ec-write-text").value.trim();
-        var count = words(text).length;
-        if (count < 12) { feedback("内容还太短。请至少写 12 个英文单词，让系统有足够内容判断。", true, "#ec-write-feedback"); return; }
-        var result = keywordScore(text, lesson().keywords);
-        var sentences = text.split(/[.!?]+/).filter(function (s) { return s.trim(); }).length;
-        var capital = /^[A-Z]/.test(text);
-        var punctuation = /[.!?]$/.test(text);
-        var score = Math.min(100, Math.round(Math.min(45, count) + result.score * 0.35 + (capital ? 10 : 0) + (punctuation ? 10 : 0)));
-        state.scores.write = score;
-        var tips = [];
-        if (count < 40) tips.push("再补充一个具体例子或结果");
-        if (sentences < 3) tips.push("尝试写成至少三个完整句子");
-        if (!capital) tips.push("句首使用大写字母");
-        if (!punctuation) tips.push("句末加标点");
-        if (result.score < 50) tips.push("使用今天学到的关键词");
-        var writingFrame = "I would like to explain " + lesson().topic + ". " + lesson().sentences[0] + " In addition, " + lesson().sentences[Math.min(1, lesson().sentences.length - 1)].replace(/^[A-Z]/, function (c) { return c.toLowerCase(); });
-        feedback("写作得分：<strong>" + score + "</strong><br>字数：" + count + "；句子：" + sentences + (tips.length ? "<br>下一次重点：" + tips.slice(0, 3).join("；") : "<br>结构完整，表达清楚。") + "<br><strong>可套用句型：</strong> " + writingFrame, score < 60, "#ec-write-feedback");
-        var holder = root.querySelector("#ec-write-feedback");
-        var actions = document.createElement("div");
-        actions.className = "ec-actions";
-        actions.innerHTML = "<button type=\"button\" class=\"btn btn-primary\" data-action=\"next-step\">生成今日报告</button>";
-        holder.appendChild(actions);
-      }
-
-      function decision() {
-        var s = state.scores;
-        if (s.listen < 60) return { title: "下一课：回退巩固", text: "听力理解仍不稳定。下一次保持同一主题，使用更慢语速，并先训练高频短语。" };
-        if (s.shadow < 60) return { title: "下一课：发音专项", text: "你已经理解内容，但跟读匹配度偏低。下一次先做短句分段跟读，再进入完整复述。" };
-        if (s.speak < 60 || s.write < 60) return { title: "下一课：换一种输出方式", text: "输入理解基本过关，但主动表达还需要支架。下一次提供句型框架，再逐步撤掉提示。" };
-        return { title: "下一课：继续推进", text: "四项能力达到当前阶段要求。下一课会增加一点语速和表达难度。" };
-      }
-      function nextBuiltInDay(current) {
-        var routes = {
-          "商务沟通": [0, 2, 4, 6, 3, 5, 1],
-          "外贸英语": [1, 0, 2, 6, 4, 3, 5],
-          "AI与培训": [0, 3, 4, 5, 6, 2, 1],
-          "综合提升": [0, 1, 2, 3, 4, 5, 6]
-        };
-        var route = routes[state.profile && state.profile.goal] || routes["综合提升"];
-        var position = route.indexOf(current);
-        return route[(position < 0 ? 0 : position + 1) % route.length];
-      }
-      function renderReport() {
-        root.querySelector("#ec-panel").replaceChildren(template("#ec-report-template"));
-        var values = [state.scores.listen, state.scores.shadow, state.scores.speak, state.scores.write];
-        var total = Math.round(values.reduce(function (a, b) { return a + b; }, 0) / values.length);
-        root.querySelector("#ec-total-score").textContent = total;
-        root.querySelector("#ec-total-ring").style.setProperty("--score-angle", (total * 3.6) + "deg");
-        root.querySelector("#ec-score-listen").textContent = state.scores.listen;
-        root.querySelector("#ec-score-shadow").textContent = state.scores.shadow;
-        root.querySelector("#ec-score-speak").textContent = state.scores.speak;
-        root.querySelector("#ec-score-write").textContent = state.scores.write;
-        var d = decision();
-        root.querySelector("#ec-decision").innerHTML = "<strong>" + d.title + "</strong><br>" + d.text;
-        if (state.history.length) {
-          var historyTitle = document.createElement("strong");
-          historyTitle.textContent = "最近学习记录";
-          var chart = document.createElement("div");
-          chart.className = "ec-history";
-          chart.setAttribute("role", "img");
-          chart.setAttribute("aria-label", "最近七次训练总分");
-          state.history.slice(-7).forEach(function (item) {
-            var bar = document.createElement("div");
-            bar.className = "ec-history-bar";
-            bar.style.setProperty("--bar-height", Math.max(4, item.total) + "%");
-            bar.innerHTML = "<span></span><small>" + item.total + "</small>";
-            chart.appendChild(bar);
-          });
-          root.querySelector("#ec-decision").after(historyTitle, chart);
-        }
-      }
+      function goStep(next) { state.step = clamp(next, 0, 5); state.view = "lesson"; render(); }
       function render() {
-        setHeader();
+        renderShell();
         if (state.view === "setup") renderSetup();
         else if (state.view === "assessment") renderAssessment();
         else if (state.view === "review") renderReview();
@@ -1689,341 +628,54 @@ svg {
         else if (state.step === 2) renderShadow();
         else if (state.step === 3) renderSpeak();
         else if (state.step === 4) renderWrite();
-        else if (state.step === 5) renderReport();
-        refreshIcons();
+        else renderReport();
+        renderShell();
       }
-      function goStep(next) {
-        state.step = Math.max(0, Math.min(5, next));
-        render();
-      }
-      function finishDay() {
-        var values = [state.scores.listen, state.scores.shadow, state.scores.speak, state.scores.write];
-        var total = Math.round(values.reduce(function (a, b) { return a + b; }, 0) / values.length);
-        state.history.push({ date: new Date().toISOString().slice(0, 10), total: total, scores: Object.assign({}, state.scores), topic: lesson().topic });
-        state.history = state.history.slice(-30);
-        state.streak += 1;
-        state.customActive = false;
-        state.day = nextBuiltInDay(state.day);
-        saved.lastFinished = new Date().toISOString();
-        persist();
-        resetTraining();
-        render();
-      }
-      function resetTraining() {
-        state.step = 0;
-        state.question = 0;
-        state.correct = 0;
-        state.playCount = 0;
-        state.shadowIndex = 0;
-        state.shadowScores = [];
-        state.scores = { listen: 0, shadow: 0, speak: 0, write: 0 };
-        state.showTranslation = false;
-      }
-
-      root.addEventListener("click", function (event) {
+      document.addEventListener("click", function (event) {
         var button = event.target.closest("button");
-        if (!button || !root.contains(button)) return;
-        var action = button.dataset.action;
-        if (button.classList.contains("ec-step")) { goStep(Number(button.dataset.step)); return; }
-        if (action === "start-assessment") startAssessment();
-        if (action === "submit-assessment") submitAssessment();
-        if (action === "back-setup") { state.view = "setup"; render(); }
-        if (action === "cancel-settings") { state.view = "lesson"; render(); }
-        if (action === "open-settings") { state.view = "setup"; render(); }
-        if (action === "open-review") { state.view = "review"; render(); }
-        if (action === "close-review") { state.view = "lesson"; render(); }
-        if (action === "open-material") { state.view = "material"; render(); }
-        if (action === "close-material") { state.view = "lesson"; render(); }
-        if (action === "build-material") buildMaterial();
-        if (action === "export-progress") exportProgress();
-        if (action === "choose-import") root.querySelector("#ec-import-file").click();
-        if (action === "play-review") speak(state.reviewWords[Number(button.dataset.index)].word, 0.72);
-        if (action === "master-word") {
-          state.reviewWords.splice(Number(button.dataset.index), 1);
-          persist();
-          render();
-        }
-        if (action === "play-all") {
-          var rateSelect = root.querySelector("#ec-rate");
-          speak(lesson().sentences.join(" "), rateSelect ? rateSelect.value : 0.88);
-          state.playCount += 1;
-          var counter = root.querySelector("#ec-play-count");
-          if (counter) counter.textContent = "已播放 " + state.playCount + " 次";
-        }
-        if (action === "submit-answer") submitAnswer();
-        if (action === "advance-question") advanceQuestion();
-        if (action === "toggle-translation") {
-          state.showTranslation = !state.showTranslation;
-          root.querySelectorAll(".ec-translation").forEach(function (p) { p.classList.toggle("ec-hidden", !state.showTranslation); });
-          button.textContent = state.showTranslation ? "隐藏中文" : "显示中文";
-        }
-        if (action === "show-vocab") showVocab(Number(button.dataset.index));
-        if (action === "next-step") goStep(state.step + 1);
-        if (action === "play-sentence") speak(lesson().sentences[state.shadowIndex], 0.78);
-        if (action === "record-shadow") { button.dataset.mode = "shadow"; startRecording(button, root.querySelector("#ec-shadow-text")); }
-        if (action === "score-shadow") scoreShadow();
-        if (action === "next-sentence") nextSentence();
-        if (action === "record-speak") startRecording(button, root.querySelector("#ec-speak-text"));
-        if (action === "score-speak") scoreSpeak();
-        if (action === "ai-speak") requestAICoach("speaking", root.querySelector("#ec-speak-text").value.trim(), "#ec-ai-speak-feedback", button);
-        if (action === "score-write") scoreWrite();
-        if (action === "ai-write") requestAICoach("writing", root.querySelector("#ec-write-text").value.trim(), "#ec-ai-write-feedback", button);
-        if (action === "finish-day") finishDay();
-        if (action === "restart-day") { resetTraining(); render(); }
+        if (!button) return;
+        var a = button.dataset.action;
+        if (a === "set-mode") setMode(button.dataset.mode);
+        if (a === "settings") { state.view = "setup"; render(); }
+        if (a === "cancel-settings" || a === "close-view") { state.view = "lesson"; render(); }
+        if (a === "review") { state.view = "review"; render(); }
+        if (a === "material") { state.view = "material"; render(); }
+        if (a === "go-step") goStep(Number(button.dataset.step));
+        if (a === "start-assessment") { state.view = "assessment"; render(); }
+        if (a === "submit-assessment") submitAssessment();
+        if (a === "play-all") { speak(lesson().sentences.join(" "), document.getElementById("rate") ? document.getElementById("rate").value : undefined); state.playCount += 1; if (document.getElementById("playCount")) document.getElementById("playCount").textContent = "已播放 " + state.playCount + " 次"; }
+        if (a === "play-sentence") speak(lesson().sentences[state.shadowIndex], state.mode === "kid" ? 0.68 : 0.78);
+        if (a === "submit-answer") submitAnswer();
+        if (a === "advance-question") advanceQuestion();
+        if (a === "toggle-translation") { state.showTranslation = !state.showTranslation; renderRead(); }
+        if (a === "show-vocab") showVocab(Number(button.dataset.index));
+        if (a === "finish-kid-reading") finishKidReading();
+        if (a === "next-step") goStep(state.step + 1);
+        if (a === "record-shadow") startRecording(button, document.getElementById("shadowText"));
+        if (a === "score-shadow") scoreShadow();
+        if (a === "next-sentence") nextSentence();
+        if (a === "record-speak") startRecording(button, document.getElementById("speakText"));
+        if (a === "score-speak") scoreSpeak();
+        if (a === "score-write") scoreWrite();
+        if (a === "ai-speak") requestAICoach("speaking", document.getElementById("speakText").value.trim(), "#aiFeedback", button);
+        if (a === "ai-write") requestAICoach("writing", document.getElementById("writeText").value.trim(), "#aiFeedback", button);
+        if (a === "finish-day") finishDay();
+        if (a === "restart-day") { resetTraining(); render(); }
+        if (a === "play-review") speak(state.reviewWords[Number(button.dataset.index)].word, 0.72);
+        if (a === "master-word") { state.reviewWords.splice(Number(button.dataset.index), 1); persist(); render(); }
+        if (a === "export") exportProgress();
+        if (a === "choose-import") document.getElementById("importFile").click();
+        if (a === "build-material") buildMaterial();
       });
-      root.addEventListener("input", function (event) {
-        if (event.target.id === "ec-write-text") {
-          var counter = root.querySelector("#ec-word-count");
-          if (counter) counter.textContent = words(event.target.value).length + " 词";
-        }
+      document.addEventListener("input", function (event) {
+        if (event.target.id === "writeText") document.getElementById("wordCount").textContent = words(event.target.value).length + " words";
       });
-      root.addEventListener("change", function (event) {
-        if (event.target.id === "ec-import-file") importProgress(event.target.files && event.target.files[0]);
+      document.addEventListener("change", function (event) {
+        if (event.target.id === "importFile") importProgress(event.target.files && event.target.files[0]);
       });
-
       render();
       checkAIHealth();
     })();
   </script>
-</div>
-
-<script id="codex-visualization-floating-ui-core" src="https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js"></script>
-<script id="codex-visualization-floating-ui-dom" src="https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js"></script>
-<script id="codex-visualization-lucide" async src="https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js"></script>
-<script id="codex-visualization-tooltip">/* oxlint-disable typescript/no-unsafe-argument, typescript/no-unsafe-call, typescript/no-unsafe-return */
-// Runs inside the visualization sandbox, not the host webview.
-(() => {
-  if (window.FloatingUIDOM == null) {
-    return;
-  }
-  const { autoUpdate, computePosition, flip, offset, shift, size } =
-    window.FloatingUIDOM;
-  const tooltipPlacements = new Set(["top", "right", "bottom", "left"]);
-  const tooltipId = `codex-visualization-tooltip-${
-    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
-  }`;
-  const tooltipGap = 5;
-  const hoverDelay = 700;
-  const skipDelay = 300;
-  let activeTrigger = null;
-  let pendingTrigger = null;
-  let tooltip = null;
-  let openTimeout = null;
-  let autoUpdateCleanup = null;
-  let positionRequest = 0;
-  let skipDelayUntil = 0;
-
-  const getTrigger = (target) =>
-    target?.nodeType === Node.ELEMENT_NODE
-      ? target.closest("[data-tooltip]")
-      : null;
-  const containsTarget = (trigger, target) =>
-    target?.nodeType != null && trigger.contains(target);
-  const getContent = (trigger) =>
-    trigger.getAttribute("data-tooltip")?.trim() ?? "";
-  const getPlacement = (trigger) => {
-    const placement = trigger.getAttribute("data-tooltip-placement");
-    return tooltipPlacements.has(placement) ? placement : "top";
-  };
-  const getTooltip = () => {
-    if (tooltip == null) {
-      tooltip = document.createElement("div");
-      tooltip.id = tooltipId;
-      tooltip.className = "tooltip";
-      tooltip.setAttribute("role", "tooltip");
-    }
-    return tooltip;
-  };
-  const setDescribedBy = (trigger, described) => {
-    const ids = new Set(
-      (trigger.getAttribute("aria-describedby") ?? "")
-        .split(/\s+/)
-        .filter(Boolean),
-    );
-    if (described) {
-      ids.add(tooltipId);
-    } else {
-      ids.delete(tooltipId);
-    }
-    if (ids.size === 0) {
-      trigger.removeAttribute("aria-describedby");
-    } else {
-      trigger.setAttribute("aria-describedby", [...ids].join(" "));
-    }
-  };
-  const clearOpenTimeout = () => {
-    if (openTimeout != null) {
-      window.clearTimeout(openTimeout);
-      openTimeout = null;
-    }
-    pendingTrigger = null;
-  };
-  const closeTooltip = (activateSkipDelay = true) => {
-    clearOpenTimeout();
-    positionRequest += 1;
-    autoUpdateCleanup?.();
-    autoUpdateCleanup = null;
-    if (activeTrigger == null) {
-      return;
-    }
-    setDescribedBy(activeTrigger, false);
-    activeTrigger = null;
-    tooltip?.remove();
-    if (activateSkipDelay) {
-      skipDelayUntil = Date.now() + skipDelay;
-    }
-  };
-  const updatePosition = (trigger, floating) => {
-    const request = ++positionRequest;
-    void computePosition(trigger, floating, {
-      middleware: [
-        offset(tooltipGap),
-        flip({ padding: tooltipGap }),
-        shift({ padding: tooltipGap }),
-        size({
-          padding: tooltipGap,
-          apply({ availableHeight, availableWidth, elements }) {
-            elements.floating.style.setProperty(
-              "--tooltip-available-width",
-              `${Math.max(0, availableWidth)}px`,
-            );
-            elements.floating.style.setProperty(
-              "--tooltip-available-height",
-              `${Math.max(0, availableHeight)}px`,
-            );
-          },
-        }),
-      ],
-      placement: getPlacement(trigger),
-      strategy: "fixed",
-    })
-      .then(({ x, y }) => {
-        if (activeTrigger !== trigger || request !== positionRequest) {
-          return;
-        }
-        const scale = window.devicePixelRatio || 1;
-        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
-        floating.style.visibility = "visible";
-      })
-      .catch(() => {
-        if (activeTrigger === trigger && request === positionRequest) {
-          closeTooltip(false);
-        }
-      });
-  };
-  const openTooltip = (trigger) => {
-    const content = getContent(trigger);
-    if (!trigger.isConnected || content.length === 0) {
-      return;
-    }
-    clearOpenTimeout();
-    if (activeTrigger === trigger) {
-      return;
-    }
-    closeTooltip();
-    const floating = getTooltip();
-    floating.textContent = content;
-    floating.style.visibility = "hidden";
-    floating.style.transform = "translate(0, 0)";
-    document.body.appendChild(floating);
-    activeTrigger = trigger;
-    setDescribedBy(trigger, true);
-    autoUpdateCleanup = autoUpdate(trigger, floating, () => {
-      updatePosition(trigger, floating);
-    });
-  };
-  const requestOpen = (trigger, immediate = false) => {
-    if (
-      getContent(trigger).length === 0 ||
-      activeTrigger === trigger ||
-      pendingTrigger === trigger
-    ) {
-      return;
-    }
-    clearOpenTimeout();
-    pendingTrigger = trigger;
-    const delay =
-      immediate || activeTrigger != null || Date.now() < skipDelayUntil
-        ? 0
-        : hoverDelay;
-    if (delay === 0) {
-      openTooltip(trigger);
-      return;
-    }
-    openTimeout = window.setTimeout(() => {
-      openTimeout = null;
-      pendingTrigger = null;
-      openTooltip(trigger);
-    }, delay);
-  };
-  const handlePointerOpen = (event) => {
-    if (event.pointerType === "touch") {
-      return;
-    }
-    const trigger = getTrigger(event.target);
-    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
-      return;
-    }
-    requestOpen(trigger);
-  };
-  const handleLeave = (event) => {
-    const trigger = getTrigger(event.target);
-    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
-      return;
-    }
-    if (activeTrigger === trigger || pendingTrigger === trigger) {
-      closeTooltip();
-    }
-  };
-  const handleFocusIn = (event) => {
-    const trigger = getTrigger(event.target);
-    if (trigger?.matches(":focus-visible")) {
-      requestOpen(trigger, true);
-    }
-  };
-  const handleKeyDown = (event) => {
-    if (event.key === "Escape") {
-      closeTooltip();
-    }
-  };
-  const handleContextMenu = (event) => {
-    const trigger = getTrigger(event.target);
-    if (activeTrigger === trigger || pendingTrigger === trigger) {
-      closeTooltip();
-    }
-  };
-  const destroy = () => {
-    closeTooltip(false);
-    document.removeEventListener("pointerover", handlePointerOpen);
-    document.removeEventListener("pointerout", handleLeave);
-    document.removeEventListener("focusin", handleFocusIn);
-    document.removeEventListener("focusout", handleLeave);
-    document.removeEventListener("keydown", handleKeyDown);
-    document.removeEventListener("contextmenu", handleContextMenu);
-    tooltip = null;
-  };
-
-  document.addEventListener("pointerover", handlePointerOpen);
-  document.addEventListener("pointerout", handleLeave);
-  document.addEventListener("focusin", handleFocusIn);
-  document.addEventListener("focusout", handleLeave);
-  document.addEventListener("keydown", handleKeyDown);
-  document.addEventListener("contextmenu", handleContextMenu);
-  window.addEventListener("pagehide", destroy, { once: true });
-})();
-</script>
-<script id="codex-visualization-lucide-initialization">(() => {
-  const initialize = () => {
-    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
-  };
-  if (globalThis.lucide != null) {
-    initialize();
-    return;
-  }
-  document
-    .getElementById("codex-visualization-lucide")
-    ?.addEventListener("load", initialize, { once: true });
-})();
-</script>
 </body>
 </html>
