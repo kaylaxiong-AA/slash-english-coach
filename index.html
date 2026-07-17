@@ -279,6 +279,29 @@
         if (!state.profile || state.profile.mode !== mode) state.view = "setup";
         resetTraining(); persist(); render();
       }
+      function saveSettings() {
+        var goal = document.getElementById("goal") ? document.getElementById("goal").value : (state.mode === "kid" ? "分级阅读" : "综合提升");
+        var minutes = document.getElementById("minutes") ? Number(document.getElementById("minutes").value) : (state.mode === "kid" ? 10 : 20);
+        if (state.mode === "kid") {
+          var selectedLevel = document.getElementById("kidLevelSelect") ? Number(document.getElementById("kidLevelSelect").value) : state.kidLevel;
+          state.kidLevel = clamp(selectedLevel, 0, kidLevels.length - 1);
+          state.profile = { mode: "kid", goal: goal, minutes: minutes, level: "儿童 Level " + state.kidLevel, diagnosticScore: state.profile ? state.profile.diagnosticScore : 0 };
+        } else {
+          state.profile = { mode: "adult", goal: goal, minutes: minutes, level: state.profile ? state.profile.level : "A2 入门", diagnosticScore: state.profile ? state.profile.diagnosticScore : 0 };
+        }
+        state.view = "lesson";
+        resetTraining();
+        persist();
+        render();
+      }
+      function startAssessment() {
+        state.draftProfile = {
+          goal: document.getElementById("goal") ? document.getElementById("goal").value : (state.mode === "kid" ? "分级阅读" : "综合提升"),
+          minutes: document.getElementById("minutes") ? Number(document.getElementById("minutes").value) : (state.mode === "kid" ? 10 : 20)
+        };
+        state.view = "assessment";
+        render();
+      }
       function addReviewWord(v, reason) {
         if (!v) return;
         var existing = state.reviewWords.find(function (item) { return item.word === v[0]; });
@@ -308,6 +331,12 @@
         var lower = text.toLowerCase();
         var hits = keywords.filter(function (k) { return lower.indexOf(k.toLowerCase()) >= 0; });
         return { score: Math.round((hits.length / Math.max(1, keywords.length)) * 100), hits: hits };
+      }
+      function adultStartDay(goal, correct) {
+        if (goal === "外贸英语") return 1;
+        if (goal === "商务沟通") return correct <= 2 ? 0 : 2;
+        if (goal === "AI与培训") return correct <= 2 ? 0 : 3;
+        return correct <= 2 ? 0 : correct <= 4 ? 2 : 3;
       }
       function createRecognition(onResult, onEnd) {
         var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -359,6 +388,13 @@
       }
       function renderSetup() {
         var kid = state.mode === "kid";
+        var hasProfile = Boolean(state.profile && state.profile.mode === state.mode);
+        var levelControl = "";
+        if (kid && hasProfile) {
+          levelControl = "<label class=\"field\">阅读 Level<select class=\"control\" id=\"kidLevelSelect\">" +
+            kidLevels.map(function (level, index) { return "<option value=\"" + index + "\"" + (index === state.kidLevel ? " selected" : "") + ">Level " + index + " - " + escapeHTML(level.topic) + "</option>"; }).join("") +
+            "</select><span>可由家长手动调低或调高，也可以重新测评。</span></label>";
+        }
         panel.innerHTML = "<h2>" + (kid ? "先做一个小测评" : "建立你的英语训练档案") + "</h2>" +
           "<p class=\"muted\">" + (kid ? "题目很短，从字母、单词和简单句开始。答错也没关系，系统会从合适的 Level 开始。" : "选择目标和每日时间，然后完成 5 道题，系统会安排合适难度。") + "</p>" +
           "<div class=\"grid\" style=\"margin-top:14px\">" +
@@ -367,10 +403,15 @@
           "</select></label>" +
           "<label class=\"field\">每天学习时间<select class=\"control\" id=\"minutes\">" +
           (kid ? "<option value=\"5\">5 分钟</option><option value=\"10\" selected>10 分钟</option><option value=\"15\">15 分钟</option>" : "<option value=\"10\">10 分钟</option><option value=\"20\" selected>20 分钟</option><option value=\"30\">30 分钟</option>") +
-          "</select></label></div>" +
-          "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"start-assessment\">" + (kid ? "开始儿童测评" : "开始水平测评") + "</button>" +
-          (state.profile && state.profile.mode === state.mode ? "<button class=\"btn\" data-action=\"cancel-settings\">返回今日训练</button>" : "") + "</div>" +
+          "</select></label>" + levelControl + "</div>" +
+          "<div class=\"actions\">" +
+          (hasProfile ? "<button class=\"btn btn-primary\" data-action=\"save-settings\">保存设置</button><button class=\"btn\" data-action=\"start-assessment\">重新测评</button><button class=\"btn\" data-action=\"cancel-settings\">返回今日训练</button>" : "<button class=\"btn btn-primary\" data-action=\"start-assessment\">" + (kid ? "开始儿童测评" : "开始水平测评") + "</button>") +
+          "</div>" +
           "<div class=\"feedback\"><strong>本地学习记录</strong><br><span class=\"muted\">星星、错题、阅读记录和成人训练分数只保存在当前浏览器。可以导出备份。</span><div class=\"actions\"><button class=\"btn\" data-action=\"export\">导出进度</button><button class=\"btn\" data-action=\"choose-import\">导入进度</button><input class=\"hidden\" id=\"importFile\" type=\"file\" accept=\"application/json,.json\"></div></div><div id=\"feedback\"></div>";
+        if (hasProfile) {
+          if (document.getElementById("goal")) document.getElementById("goal").value = state.profile.goal;
+          if (document.getElementById("minutes")) document.getElementById("minutes").value = String(state.profile.minutes);
+        }
       }
       function renderAssessment() {
         var qs = state.mode === "kid" ? kidDiagnostic : adultDiagnostic;
@@ -393,15 +434,16 @@
           if (s) { answered += 1; if (Number(s.value) === q[2]) correct += 1; }
         });
         if (answered < qs.length) { feedback("还有 " + (qs.length - answered) + " 题没完成。", true); return; }
-        var goal = document.getElementById("goal") ? document.getElementById("goal").value : (state.mode === "kid" ? "分级阅读" : "综合提升");
-        var minutes = document.getElementById("minutes") ? Number(document.getElementById("minutes").value) : (state.mode === "kid" ? 10 : 20);
+        var draft = state.draftProfile || {};
+        var goal = draft.goal || (state.mode === "kid" ? "分级阅读" : "综合提升");
+        var minutes = Number(draft.minutes) || (state.mode === "kid" ? 10 : 20);
         if (state.mode === "kid") {
           var level = correct <= 1 ? 0 : correct <= 2 ? 1 : correct <= 4 ? 2 : 3;
           state.kidLevel = level;
           state.profile = { mode: "kid", goal: goal, minutes: minutes, level: "儿童 Level " + level, diagnosticScore: correct };
         } else {
           var adultLevel = correct <= 2 ? "A2 入门" : correct <= 4 ? "A2+ 进阶" : "B1 初级";
-          state.adultDay = correct <= 2 ? 0 : correct <= 4 ? 2 : 3;
+          state.adultDay = adultStartDay(goal, correct);
           state.profile = { mode: "adult", goal: goal, minutes: minutes, level: adultLevel, diagnosticScore: correct };
         }
         state.view = "lesson"; resetTraining(); persist(); render();
@@ -451,7 +493,7 @@
       }
       function renderRead() {
         var kid = state.mode === "kid"; var l = lesson();
-        panel.innerHTML = "<h2>阅读挑战</h2><p class=\"muted\">" + (kid ? "读一读，点单词，再回答理解选择题。每答对一题都有星星。" : "边听边读，查看重点词，然后进入跟读。") + "</p><div class=\"actions\"><button class=\"btn\" data-action=\"play-all\">边听边读</button><button class=\"btn\" data-action=\"toggle-translation\">" + (state.showTranslation ? "隐藏中文" : "显示中文") + "</button></div><div id=\"transcript\"></div><div class=\"vocab\" id=\"vocab\"></div><div id=\"vocabDetail\" class=\"feedback hidden\"></div>" + (kid ? "<div id=\"kidChallenge\"></div>" : "") + "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"" + (kid ? "finish-kid-reading" : "next-step") + "\">" + (kid ? "完成阅读挑战" : "完成阅读挑战，开始跟读") + "</button></div><div id=\"feedback\"></div>";
+        panel.innerHTML = "<h2>阅读挑战</h2><p class=\"muted\">" + (kid ? "读一读，点单词，再回答理解选择题。每答对一题都有星星。" : "边听边读，查看重点词，然后进入跟读。") + "</p><div class=\"actions\"><button class=\"btn\" data-action=\"play-all\">边听边读</button><button class=\"btn\" data-action=\"toggle-translation\">" + (state.showTranslation ? "隐藏中文" : "显示中文") + "</button></div><div id=\"transcript\"></div><div class=\"vocab\" id=\"vocab\"></div><div id=\"vocabDetail\" class=\"feedback hidden\"></div>" + (kid ? "<div id=\"kidChallenge\"></div>" : "<div class=\"actions\"><button class=\"btn btn-primary\" data-action=\"next-step\">完成阅读挑战，开始跟读</button></div>") + "<div id=\"feedback\"></div>";
         var t = document.getElementById("transcript");
         l.sentences.forEach(function (s, i) { t.insertAdjacentHTML("beforeend", "<p class=\"sentence\">" + escapeHTML(s) + "</p><p class=\"translation " + (state.showTranslation ? "" : "hidden") + "\">" + escapeHTML(l.translations[i] || "") + "</p>"); });
         l.vocab.forEach(function (v, i) { document.getElementById("vocab").insertAdjacentHTML("beforeend", "<button class=\"btn\" data-action=\"show-vocab\" data-index=\"" + i + "\">" + escapeHTML(v[0]) + "</button>"); });
@@ -468,11 +510,6 @@
         document.getElementById("reviewCount").textContent = state.reviewWords.length;
         var d = document.getElementById("vocabDetail");
         d.classList.remove("hidden"); d.innerHTML = "<strong>" + escapeHTML(v[0]) + "</strong> - " + escapeHTML(v[1]) + "<br><span class=\"muted\">" + escapeHTML(v[2]) + "</span>";
-      }
-      function finishKidReading() {
-        state.scores.listen = state.scores.read || Math.round((state.correct / lesson().questions.length) * 100);
-        feedback("阅读挑战完成！继续跟读可以再拿星星。", false);
-        goStep(2);
       }
       function renderShadow() {
         panel.innerHTML = "<h2>" + (state.mode === "kid" ? "跟我说" : "逐句跟读") + "</h2><p class=\"muted\">" + (state.mode === "kid" ? "先听，再读。读不准也没关系，可以慢慢来。" : "先听示范，再录音或手动输入。") + "</p><p class=\"sentence\">" + escapeHTML(lesson().sentences[state.shadowIndex]) + "</p><p class=\"translation " + (state.showTranslation ? "" : "hidden") + "\">" + escapeHTML(lesson().translations[state.shadowIndex]) + "</p><div class=\"actions\"><button class=\"btn\" data-action=\"play-sentence\">听这一句</button><button class=\"btn btn-primary\" data-action=\"record-shadow\" data-target=\"#feedback\"><span>开始跟读</span></button><span class=\"muted\">第 " + (state.shadowIndex + 1) + " / " + lesson().sentences.length + " 句</span></div><textarea class=\"control\" id=\"shadowText\" placeholder=\"Speak or type here...\"></textarea><div class=\"actions\"><button class=\"btn\" data-action=\"score-shadow\">检查本句</button><button class=\"btn btn-primary hidden\" data-action=\"next-sentence\">下一句</button></div><div id=\"feedback\"></div>";
@@ -645,11 +682,12 @@
         var a = button.dataset.action;
         if (a === "set-mode") setMode(button.dataset.mode);
         if (a === "settings") { state.view = "setup"; render(); }
+        if (a === "save-settings") saveSettings();
         if (a === "cancel-settings" || a === "close-view") { state.view = "lesson"; render(); }
         if (a === "review") { state.view = "review"; render(); }
         if (a === "material") { state.view = "material"; render(); }
         if (a === "go-step") goStep(Number(button.dataset.step));
-        if (a === "start-assessment") { state.view = "assessment"; render(); }
+        if (a === "start-assessment") startAssessment();
         if (a === "submit-assessment") submitAssessment();
         if (a === "play-all") { speak(lesson().sentences.join(" "), document.getElementById("rate") ? document.getElementById("rate").value : undefined); state.playCount += 1; if (document.getElementById("playCount")) document.getElementById("playCount").textContent = "已播放 " + state.playCount + " 次"; }
         if (a === "play-sentence") speak(lesson().sentences[state.shadowIndex], state.mode === "kid" ? 0.68 : 0.78);
@@ -657,7 +695,6 @@
         if (a === "advance-question") advanceQuestion();
         if (a === "toggle-translation") { state.showTranslation = !state.showTranslation; renderRead(); }
         if (a === "show-vocab") showVocab(Number(button.dataset.index));
-        if (a === "finish-kid-reading") finishKidReading();
         if (a === "next-step") goStep(state.step + 1);
         if (a === "record-shadow") startRecording(button, document.getElementById("shadowText"));
         if (a === "score-shadow") scoreShadow();
