@@ -342,7 +342,10 @@
         document.getElementById("timeBadge").textContent = (state.profile && state.profile.mode === state.mode ? state.profile.minutes : (state.mode === "kid" ? 10 : 20)) + " 分钟";
         document.getElementById("reviewCount").textContent = state.reviewWords.length;
         document.querySelectorAll("[data-action='set-mode']").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)); });
-        document.querySelector("[data-action='material']").classList.toggle("hidden", state.mode === "kid");
+        var hasProfile = Boolean(state.profile && state.profile.mode === state.mode);
+        document.querySelector("[data-action='review']").classList.toggle("hidden", !hasProfile);
+        document.querySelector("[data-action='settings']").classList.toggle("hidden", !hasProfile || state.view === "setup");
+        document.querySelector("[data-action='material']").classList.toggle("hidden", !hasProfile || state.mode === "kid");
         var nav = document.getElementById("steps");
         nav.innerHTML = "";
         steps().forEach(function (s, i) {
@@ -427,7 +430,7 @@
         if (ok) state.correct += 1; else addReviewWord(lesson().vocab[state.question % lesson().vocab.length], state.mode === "kid" ? "阅读挑战错题" : "听力错题");
         feedback(ok ? (state.mode === "kid" ? "答对了，得到一颗星！" : "回答正确。") : "正确答案是：<strong>" + escapeHTML(q[1][q[2]]) + "</strong>", !ok);
         var b = document.querySelector("[data-action='submit-answer']");
-        b.dataset.action = "advance-question"; b.textContent = state.question < lesson().questions.length - 1 ? "下一题" : (state.mode === "kid" ? "看我的星星" : "查看原文");
+        b.dataset.action = "advance-question"; b.textContent = state.question < lesson().questions.length - 1 ? "下一题" : (state.mode === "kid" ? "去跟读拿星星" : "查看原文");
       }
       function advanceQuestion() {
         if (state.question < lesson().questions.length - 1) {
@@ -438,6 +441,11 @@
         } else {
           state.scores.listen = Math.round((state.correct / lesson().questions.length) * 100);
           state.scores.read = state.scores.listen;
+          if (state.mode === "kid") {
+            state.question = 0;
+            goStep(2);
+            return;
+          }
           goStep(1);
         }
       }
